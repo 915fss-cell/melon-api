@@ -4,7 +4,7 @@ export const dashboardPage = `<!doctype html>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#10110f" />
-    <meta name="description" content="Explore Melon’s Top 100, Hot 100, daily, weekly, and monthly music charts in one place." />
+    <meta name="description" content="Explore Melon’s Top 100, Hot 100 30-day and 100-day charts, and daily, weekly, and monthly music charts in one place." />
     <title>Charts Explorer — Melon Charts</title>
     <link rel="preconnect" href="https://cdnimg.melon.co.kr" crossorigin />
     <link rel="stylesheet" href="/app.css?v=4" />
@@ -19,10 +19,11 @@ export const dashboardPage = `<!doctype html>
         <div class="nav-label">EXPLORE</div>
         <nav class="chart-nav" aria-label="Jump to a chart">
           <a class="nav-item" href="#chart-top100"><span class="nav-index">01</span><span>Top 100</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-hot100"><span class="nav-index">02</span><span>Hot 100</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-day"><span class="nav-index">03</span><span>Daily chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-week"><span class="nav-index">04</span><span>Weekly chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-month"><span class="nav-index">05</span><span>Monthly chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-item" href="#chart-hot100"><span class="nav-index">02</span><span>Hot 100 · 30 days</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-item" href="#chart-hot100_100"><span class="nav-index">03</span><span>Hot 100 · 100 days</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-item" href="#chart-day"><span class="nav-index">04</span><span>Daily chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-item" href="#chart-week"><span class="nav-index">05</span><span>Weekly chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-item" href="#chart-month"><span class="nav-index">06</span><span>Monthly chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
         </nav>
         <div class="sidebar-bottom">
           <span class="live-dot" aria-hidden="true"></span>
@@ -44,7 +45,7 @@ export const dashboardPage = `<!doctype html>
               <h1 id="page-title">Charts <em>Explorer</em></h1>
               <p class="intro-copy">Every chart, one listening pulse. Search and compare what Korea is hearing.</p>
             </div>
-            <div class="intro-note"><span class="note-spark" aria-hidden="true">✳</span><span>Five charts.<br />One listening pulse.</span></div>
+            <div class="intro-note"><span class="note-spark" aria-hidden="true">✳</span><span>Six charts.<br />One listening pulse.</span></div>
           </section>
 
           <section class="explorer-controls" aria-label="Filter all charts">
@@ -53,7 +54,6 @@ export const dashboardPage = `<!doctype html>
               <label class="select-wrap" for="sort-select"><span class="sr-only">Sort chart results</span><select id="sort-select"><option value="rank-asc">Rank: low to high</option><option value="rank-desc">Rank: high to low</option><option value="title-asc">Title: A to Z</option><option value="title-desc">Title: Z to A</option></select></label>
               <button class="filter-button" id="moving-filter" aria-pressed="false"><span aria-hidden="true">↗</span> Movers only</button>
             </div>
-            <div class="explorer-period"><span>HOT 100 PERIOD</span><div id="hot100-period" class="hot100-period" role="group" aria-label="Hot 100 time period"><button type="button" class="period-button active" data-period="30" aria-pressed="true">30 days</button><button type="button" class="period-button" data-period="100" aria-pressed="false">100 days</button></div></div>
           </section>
 
           <div id="chart-state" class="state-message" role="status" aria-live="polite">Loading all charts…</div>
