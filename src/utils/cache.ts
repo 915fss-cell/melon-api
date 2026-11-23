@@ -18,7 +18,18 @@ export interface CacheConfig {
 // Create a cache service for use across the application
 export class CacheService {
   private static cache: Record<string, CacheItem<any>> = {};
+  private static inFlight = new Map<string, Promise<unknown>>();
   private static defaultTTL: number = 1 * 60 * 1000; // 1 minute in milliseconds
+  private static readonly maxEntries = 500;
+
+  private static store<T>(key: string, data: T): void {
+    if (!CacheService.cache[key] && Object.keys(CacheService.cache).length >= CacheService.maxEntries) {
+      const oldestKey = Object.entries(CacheService.cache)
+        .sort(([, left], [, right]) => left.timestamp - right.timestamp)[0]?.[0];
+      if (oldestKey) delete CacheService.cache[oldestKey];
+    }
+    CacheService.cache[key] = { data, timestamp: Date.now() };
+  }
 
   /**
    * Get or fetch data with caching
@@ -42,16 +53,20 @@ export class CacheService {
       return CacheService.cache[key].data;
     }
 
-    // Otherwise fetch fresh data
-    const data = await fetchFn();
+    const pending = CacheService.inFlight.get(key);
+    if (pending) return pending as Promise<T>;
 
-    // Update cache
-    CacheService.cache[key] = {
-      data,
-      timestamp: now,
-    };
+    const request = fetchFn().then((data) => {
+      CacheService.store(key, data);
+      return data;
+    });
+    CacheService.inFlight.set(key, request);
 
-    return data;
+    try {
+      return await request;
+    } finally {
+      if (CacheService.inFlight.get(key) === request) CacheService.inFlight.delete(key);
+    }
   }
 
   /**
@@ -77,18 +92,22 @@ export class CacheService {
       return ok(CacheService.cache[key].data) as Result<T, E>;
     }
 
-    // Otherwise fetch fresh data
-    const result = await fetchFn();
+    const pending = CacheService.inFlight.get(key);
+    if (pending) return pending as Promise<Result<T, E>>;
 
-    // Only cache successful results
-    if (result.isOk()) {
-      CacheService.cache[key] = {
-        data: result.value,
-        timestamp: now,
-      };
+    const request = fetchFn().then((result) => {
+      if (result.isOk()) {
+        CacheService.store(key, result.value);
+      }
+      return result;
+    });
+    CacheService.inFlight.set(key, request);
+
+    try {
+      return await request;
+    } finally {
+      if (CacheService.inFlight.get(key) === request) CacheService.inFlight.delete(key);
     }
-
-    return result;
   }
 
   /**
@@ -103,6 +122,7 @@ export class CacheService {
    */
   static clear(): void {
     CacheService.cache = {};
+    CacheService.inFlight.clear();
   }
 
   /**
