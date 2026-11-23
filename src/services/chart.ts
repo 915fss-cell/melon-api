@@ -163,6 +163,10 @@ export class MelonChartService {
 
 const chartService = new MelonChartService();
 
+export function getMelonChartCacheKey(chartType: string, hot100Period = "30"): string {
+  return `chart_${chartType}${chartType === "hot100" ? `_${hot100Period}d` : ""}`;
+}
+
 /**
  * Get Melon chart data with caching
  * @param chartType The type of chart to fetch
@@ -183,7 +187,7 @@ export async function getMelonChart(
 
   try {
     return await CacheService.getOrFetchResult<MelonTrack[]>(
-      `chart_${chartType}${chartType === "hot100" ? `_${hot100Period}d` : ""}`,
+      getMelonChartCacheKey(chartType, hot100Period),
       async () => {
         try {
           const chartResult = await chartService.getChart(chartType, hot100Period);

@@ -52,6 +52,7 @@ export const dashboardPage = `<!doctype html>
               <div class="chart-kicker"><span class="live-dot" aria-hidden="true"></span>LIVE FROM MELON</div>
               <h2 id="chart-title">Top 100</h2>
               <p id="chart-description">The songs shaping the moment.</p>
+              <time id="chart-updated-at" class="chart-updated" aria-live="polite">Checking latest data…</time>
             </div>
             <div class="chart-meta"><span id="chart-total">—</span><span>TRACKS</span></div>
           </section>

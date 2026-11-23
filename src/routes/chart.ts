@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { getMelonChart } from "../services/chart.js";
+import { getMelonChart, getMelonChartCacheKey } from "../services/chart.js";
 import { apiError } from "../utils/api-error.js";
+import { CacheService } from "../utils/cache.js";
 
 const chart = new Hono();
 
@@ -20,9 +21,17 @@ chart.get("/:chartType", async (c) => {
     return apiError(c, 400, "INVALID_CHART_PERIOD", "Hot 100 period must be 30 or 100 days.");
   }
 
-  const result = await getMelonChart(chartType, chartType === "hot100" ? period ?? "30" : undefined);
+  const resolvedPeriod = chartType === "hot100" ? period ?? "30" : "30";
+  const result = await getMelonChart(chartType, resolvedPeriod);
   return result.match(
-    (data) => c.json(data),
+    (data) => {
+      const updatedAt = CacheService.getUpdatedAt(getMelonChartCacheKey(chartType, resolvedPeriod));
+      const headers: Record<string, string> = {};
+      if (updatedAt !== null) {
+        headers["X-Chart-Updated-At"] = new Date(updatedAt).toISOString();
+      }
+      return c.json(data, 200, headers);
+    },
     () => apiError(c, 502, "UPSTREAM_ERROR", "Chart data is temporarily unavailable.")
   );
 });
