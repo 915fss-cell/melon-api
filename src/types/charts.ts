@@ -7,7 +7,7 @@ export interface MelonTrack {
   albumId: string | null;
   imageUrl: string;
   rankChange: {
-    direction: "up" | "down" | "static";
+    direction: "up" | "down" | "static" | "new" | "reentry";
     value: number;
   } | null;
 }

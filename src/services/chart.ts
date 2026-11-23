@@ -116,13 +116,22 @@ export class MelonChartService {
 
             // Extract rank change information
             let rankChange: {
-              direction: "up" | "down" | "static";
+              direction: "up" | "down" | "static" | "new" | "reentry";
               value: number;
             } | null = null;
 
+            // Check for first-time and returning chart entries
+            if ($(element).find("span.bullet_icons.rank_new").length) {
+              rankChange = { direction: "new", value: 0 };
+            } else if (
+              $(element).find("span.bullet_icons.rank_reentry, span.bullet_icons.rank_re").length
+            ) {
+              rankChange = { direction: "reentry", value: 0 };
+            }
+
             // Check for rank up
             const rankUpElement = $(element).find("span.bullet_icons.rank_up");
-            if (rankUpElement.length) {
+            if (!rankChange && rankUpElement.length) {
               const value =
                 Number($(element).find("span.up").text().trim()) || 0;
               rankChange = { direction: "up", value };
