@@ -3,6 +3,9 @@ import app from "@/index";
 import { loadConfig } from "@/config";
 import { CacheService } from "@/utils/cache";
 import { err, ok } from "neverthrow";
+import { getMelonChart } from "@/services/chart";
+import { getSongData } from "@/services/song";
+import { getAlbumData } from "@/services/album";
 
 describe("application configuration", () => {
   test("uses documented defaults", () => {
@@ -137,5 +140,203 @@ describe("API foundation", () => {
     const albumResponse = await app.request("/api/album/not-an-id");
     expect(songResponse.status).toBe(400);
     expect(albumResponse.status).toBe(400);
+  });
+});
+
+describe("Hot 100 period handling", () => {
+  test("uses separate D30 and D100 upstream requests and cache entries", async () => {
+    const originalFetch = globalThis.fetch;
+    const originalInterval = process.env.MELON_MIN_REQUEST_INTERVAL_MS;
+    process.env.MELON_MIN_REQUEST_INTERVAL_MS = "1";
+    const upstreamTypes: string[] = [];
+    globalThis.fetch = (async (input) => {
+      const upstreamType = new URL(String(input)).searchParams.get("chartType");
+      upstreamTypes.push(upstreamType ?? "missing");
+      const title = upstreamType === "D100" ? "100-day Track" : "30-day Track";
+      return new Response(chartFixture.replace("Test Track", title), { status: 200 });
+    }) as typeof fetch;
+    CacheService.clear();
+
+    try {
+      const thirtyDay = await app.request("/api/chart/hot100?period=30");
+      const thirtyDayCached = await app.request("/api/chart/hot100?period=30");
+      const hundredDay = await app.request("/api/chart/hot100?period=100");
+
+      expect(thirtyDay.status).toBe(200);
+      expect(thirtyDayCached.status).toBe(200);
+      expect(hundredDay.status).toBe(200);
+      expect((await thirtyDay.json())[0]?.title).toBe("30-day Track");
+      expect((await thirtyDayCached.json())[0]?.title).toBe("30-day Track");
+      expect((await hundredDay.json())[0]?.title).toBe("100-day Track");
+      expect(upstreamTypes).toEqual(["D30", "D100"]);
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalInterval === undefined) delete process.env.MELON_MIN_REQUEST_INTERVAL_MS;
+      else process.env.MELON_MIN_REQUEST_INTERVAL_MS = originalInterval;
+      CacheService.clear();
+    }
+  });
+
+  test("defaults to D30 and rejects unsupported periods before fetching", async () => {
+    const originalFetch = globalThis.fetch;
+    const originalInterval = process.env.MELON_MIN_REQUEST_INTERVAL_MS;
+    process.env.MELON_MIN_REQUEST_INTERVAL_MS = "1";
+    const upstreamTypes: string[] = [];
+    globalThis.fetch = (async (input) => {
+      upstreamTypes.push(new URL(String(input)).searchParams.get("chartType") ?? "missing");
+      return new Response(chartFixture, { status: 200 });
+    }) as typeof fetch;
+    CacheService.clear();
+
+    try {
+      const defaultPeriod = await app.request("/api/chart/hot100");
+      const invalidPeriod = await app.request("/api/chart/hot100?period=7");
+
+      expect(defaultPeriod.status).toBe(200);
+      expect(invalidPeriod.status).toBe(400);
+      expect(await invalidPeriod.json()).toMatchObject({
+        error: { code: "INVALID_CHART_PERIOD" },
+      });
+      expect(upstreamTypes).toEqual(["D30"]);
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalInterval === undefined) delete process.env.MELON_MIN_REQUEST_INTERVAL_MS;
+      else process.env.MELON_MIN_REQUEST_INTERVAL_MS = originalInterval;
+      CacheService.clear();
+    }
+  });
+});
+
+describe("song detail parser", () => {
+  test("extracts song metadata, lyrics, and grouped producer roles", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(
+      await Bun.file(new URL("./fixtures/song-detail.html", import.meta.url)).text(),
+      { status: 200 }
+    )) as typeof fetch;
+    CacheService.clear();
+
+    try {
+      const result = await getSongData("900001");
+      expect(result.isOk()).toBe(true);
+      const song = result._unsafeUnwrap();
+      expect(song.title).toBe("테스트 곡");
+      expect(song.artists).toEqual([
+        { name: "테스트 아티스트", id: "12345" },
+        { name: "피처링 아티스트", id: "67890" },
+      ]);
+      expect(song.album).toEqual({ name: "테스트 앨범", id: "24680" });
+      expect(song.releaseDate).toBe("2025.03.14");
+      expect(song.genre).toBe("댄스");
+      expect(song.lyrics).toBe("첫 번째 줄 & 함께\n두 번째 줄");
+      expect(song.producers).toEqual([
+        { name: "작사가", id: "13579", roles: ["작사", "작곡"] },
+        { name: "편곡가", id: "11223", roles: ["편곡"] },
+      ]);
+      expect(song.imageUrl).toBe("https://cdnimg.melon.co.kr/song-cover.jpg");
+    } finally {
+      globalThis.fetch = originalFetch;
+      CacheService.clear();
+    }
+  });
+
+  test("tolerates missing fields and malformed IDs without inventing metadata", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(
+      await Bun.file(new URL("./fixtures/song-detail-incomplete.html", import.meta.url)).text(),
+      { status: 200 }
+    )) as typeof fetch;
+    CacheService.clear();
+
+    try {
+      const result = await getSongData("900002");
+      expect(result.isOk()).toBe(true);
+      expect(result._unsafeUnwrap()).toMatchObject({
+        title: "",
+        artists: [{ name: "이름만 있는 아티스트", id: "" }],
+        album: { name: "이름만 있는 앨범", id: "" },
+        releaseDate: "",
+        genre: "",
+        lyrics: "",
+        producers: [],
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+      CacheService.clear();
+    }
+  });
+});
+
+describe("album detail parser", () => {
+  test("extracts album metadata, artists, tracklist, and introduction", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(
+      await Bun.file(new URL("./fixtures/album-detail.html", import.meta.url)).text(),
+      { status: 200 }
+    )) as typeof fetch;
+    CacheService.clear();
+
+    try {
+      const result = await getAlbumData("800001");
+      expect(result.isOk()).toBe(true);
+      expect(result._unsafeUnwrap()).toMatchObject({
+        albumId: "800001",
+        type: "정규",
+        title: "테스트 앨범",
+        artists: [{ name: "테스트 아티스트", id: "12345" }],
+        releaseDate: "2025.03.14",
+        genre: "댄스",
+        publisher: "테스트 발매사",
+        agency: "테스트 기획사",
+        imageUrl: "https://cdnimg.melon.co.kr/album-cover.jpg",
+        songs: [
+          {
+            songId: "10001",
+            title: "타이틀 트랙",
+            artists: [{ name: "테스트 아티스트", id: "12345" }],
+            isTitle: true,
+          },
+          {
+            songId: "10002",
+            title: "두 번째 트랙",
+            artists: [{ name: "피처링 아티스트", id: "67890" }],
+            isTitle: false,
+          },
+        ],
+        introduction: "앨범 소개 첫 줄\n앨범 소개 & 추가 내용",
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+      CacheService.clear();
+    }
+  });
+
+  test("tolerates missing metadata and skips malformed track IDs", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(
+      await Bun.file(new URL("./fixtures/album-detail-incomplete.html", import.meta.url)).text(),
+      { status: 200 }
+    )) as typeof fetch;
+    CacheService.clear();
+
+    try {
+      const result = await getAlbumData("800002");
+      expect(result.isOk()).toBe(true);
+      expect(result._unsafeUnwrap()).toMatchObject({
+        albumId: "800002",
+        type: "싱글",
+        title: "",
+        artists: [{ name: "이름만 있는 아티스트", id: "" }],
+        releaseDate: "",
+        genre: "미분류",
+        publisher: "",
+        agency: "",
+        songs: [],
+        introduction: "",
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+      CacheService.clear();
+    }
   });
 });

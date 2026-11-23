@@ -230,7 +230,9 @@ async function fetchAlbumDetails() {
 
 ### Development Checks
 
-Run the test suite with `bun test` and check types with `bun x tsc --noEmit`.
+Run the fixture-backed test suite with `bun test` and check types with `bun x tsc --noEmit`. Automated tests do not call Melon.
+
+For a manual, bounded live check, run `bun run smoke:live`. It requests each chart once, checks both Hot 100 periods, then uses an ID from the Top 100 response for one song and one album detail request. Requests are sequential, follow `MELON_MIN_REQUEST_INTERVAL_MS`, and are not retried. The command reports request/upstream failures separately from responses that arrive successfully but do not parse into expected data. It selects detail IDs from the Top 100 response when present; if Melon omits those IDs, set optional `MELON_SMOKE_SONG_ID` and/or `MELON_SMOKE_ALBUM_ID` to known numeric IDs to run those checks. Network availability and Melon's current markup can affect this optional check.
 
 ## Technical Details
 
