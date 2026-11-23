@@ -55,6 +55,10 @@ export const dashboardPage = `<!doctype html>
             </div>
             <div class="chart-meta"><span id="chart-total">—</span><span>TRACKS</span></div>
           </section>
+          <div id="hot100-period" class="hot100-period" role="group" aria-label="Hot 100 time period" hidden>
+            <button type="button" class="period-button active" data-period="30" aria-pressed="true">30 days</button>
+            <button type="button" class="period-button" data-period="100" aria-pressed="false">100 days</button>
+          </div>
 
           <section class="stats-grid" aria-label="Chart summary">
             <article class="stat-card"><div class="stat-label">TRACKS LISTED</div><div class="stat-value" id="stat-tracks">—</div><div class="stat-foot">In this chart</div><span class="stat-glyph" aria-hidden="true">#</span></article>

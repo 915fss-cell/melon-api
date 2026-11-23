@@ -26,7 +26,8 @@ export class MelonChartService {
    * @returns - Result containing list of tracks or an error
    */
   async getChart(
-    chartType: string = "top100"
+    chartType: string = "top100",
+    hot100Period: string = "30"
   ): Promise<Result<MelonTrack[], Error>> {
     if (!this.CHART_TYPES.hasOwnProperty(chartType)) {
       return err(
@@ -38,7 +39,9 @@ export class MelonChartService {
       );
     }
 
-    const path = this.CHART_TYPES[chartType] + "/";
+    const path =
+      this.CHART_TYPES[chartType] +
+      (chartType === "hot100" ? `/index.htm?type=${hot100Period === "100" ? "2" : "1"}` : "/");
     const htmlResult = await this.scraper.fetchHtml(path);
 
     // Fix using andThen instead of map
@@ -164,7 +167,8 @@ const chartService = new MelonChartService();
  * @returns Result containing array of track objects or an error
  */
 export async function getMelonChart(
-  chartType: string
+  chartType: string,
+  hot100Period: string = "30"
 ): Promise<Result<MelonTrack[], Error>> {
   // Validate chart type
   if (!Object.keys(chartService.CHART_TYPES).includes(chartType)) {
@@ -177,7 +181,7 @@ export async function getMelonChart(
 
   try {
     return await CacheService.getOrFetchResult<MelonTrack[]>(
-      `chart_${chartType}`,
+      `chart_${chartType}${chartType === "hot100" ? `_${hot100Period}d` : ""}`,
       async () => {
         try {
           const chartResult = await chartService.getChart(chartType);
