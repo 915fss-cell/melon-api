@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { getAlbumData } from "@/services/album";
-import { apiError } from "@/utils/api-error";
+import { getAlbumData } from "../services/album.js";
+import { apiError } from "../utils/api-error.js";
 
 const album = new Hono();
 

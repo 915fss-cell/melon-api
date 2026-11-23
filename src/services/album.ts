@@ -1,5 +1,5 @@
-import { MelonScraper } from "@/services/scraper";
-import { CacheService } from "@/utils/cache";
+import { MelonScraper } from "./scraper.js";
+import { CacheService } from "../utils/cache.js";
 import { Result, ok, err } from "neverthrow";
 
 interface AlbumArtist {
