@@ -114,6 +114,9 @@ describe("API foundation", () => {
       for (const chartType of ["top100", "hot100", "day", "week", "month"]) {
         const response = await app.request(`/api/chart/${chartType}`);
         expect(response.status).toBe(200);
+        const updatedAt = response.headers.get("X-Chart-Updated-At");
+        expect(updatedAt).not.toBeNull();
+        expect(Number.isNaN(Date.parse(updatedAt ?? ""))).toBe(false);
         expect(await response.json()).toEqual([
           {
             rank: "1",
@@ -165,6 +168,10 @@ describe("Hot 100 period handling", () => {
       expect(thirtyDay.status).toBe(200);
       expect(thirtyDayCached.status).toBe(200);
       expect(hundredDay.status).toBe(200);
+      expect(thirtyDayCached.headers.get("X-Chart-Updated-At")).toBe(
+        thirtyDay.headers.get("X-Chart-Updated-At")
+      );
+      expect(hundredDay.headers.get("X-Chart-Updated-At")).not.toBeNull();
       expect((await thirtyDay.json())[0]?.title).toBe("30-day Track");
       expect((await thirtyDayCached.json())[0]?.title).toBe("30-day Track");
       expect((await hundredDay.json())[0]?.title).toBe("100-day Track");

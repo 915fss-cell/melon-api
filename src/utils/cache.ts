@@ -110,6 +110,10 @@ export class CacheService {
     }
   }
 
+  static getUpdatedAt(key: string): number | null {
+    return CacheService.cache[key]?.timestamp ?? null;
+  }
+
   /**
    * Set the default TTL for the cache
    */
