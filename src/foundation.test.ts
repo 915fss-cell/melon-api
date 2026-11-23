@@ -73,6 +73,19 @@ describe("API foundation", () => {
     expect(await response.json()).toEqual({ status: "ok" });
   });
 
+  test("serves the chart explorer and correctly typed assets", async () => {
+    const page = await app.request("/");
+    const script = await app.request("/app.js");
+    const styles = await app.request("/app.css");
+
+    expect(page.status).toBe(200);
+    expect(page.headers.get("content-type")).toContain("text/html");
+    expect(await page.text()).toContain("Melon Charts — Music, ranked");
+    expect(script.headers.get("content-type")).toContain("text/javascript");
+    expect(await script.text()).toContain("/api/chart/");
+    expect(styles.headers.get("content-type")).toContain("text/css");
+  });
+
   test("uses a consistent not-found error response", async () => {
     const response = await app.request("/api/unknown-endpoint");
     expect(response.status).toBe(404);

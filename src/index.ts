@@ -3,6 +3,9 @@ import routes from "@/routes";
 import { chartPrefetcher } from "@/utils/prefetch";
 import { loadConfig } from "@/config";
 import { ApiError, apiError } from "@/utils/api-error";
+import { dashboardClient } from "@/frontend/client";
+import { dashboardPage } from "@/frontend/page";
+import { dashboardStyles } from "@/frontend/styles";
 
 const config = loadConfig();
 const app = new Hono();
@@ -26,19 +29,15 @@ app.notFound((c) => apiError(c, 404, "NOT_FOUND", "The requested endpoint was no
 app.get("/health", (c) => c.json({ status: "ok" }));
 app.route("/api", routes);
 
-app.get("/", (c) => c.json({
-  message: "Melon Music API",
-  endpoints: [
-    "/health",
-    "/api/chart/top100",
-    "/api/chart/hot100",
-    "/api/chart/day",
-    "/api/chart/week",
-    "/api/chart/month",
-    "/api/song/:songId",
-    "/api/album/:albumId",
-  ],
+app.get("/app.css", (c) => c.body(dashboardStyles, 200, {
+  "Content-Type": "text/css; charset=utf-8",
+  "Cache-Control": "no-cache",
 }));
+app.get("/app.js", (c) => c.body(dashboardClient, 200, {
+  "Content-Type": "text/javascript; charset=utf-8",
+  "Cache-Control": "no-cache",
+}));
+app.get("/", (c) => c.html(dashboardPage));
 
 if (config.enableChartPrefetch) {
   chartPrefetcher.updateConfig({
