@@ -6,6 +6,10 @@ export interface MelonTrack {
   album: string;
   albumId: string | null;
   imageUrl: string;
+  rankChange: {
+    direction: "up" | "down" | "static";
+    value: number;
+  } | null;
 }
 
 export type ChartType = "top100" | "hot100" | "day" | "week" | "month";

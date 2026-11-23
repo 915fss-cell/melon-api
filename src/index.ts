@@ -1,64 +1,58 @@
 import { Hono } from "hono";
-import { analytics } from "@/middleware/analytics";
 import routes from "@/routes";
-import { logger } from "hono/logger";
 import { chartPrefetcher } from "@/utils/prefetch";
+import { loadConfig } from "@/config";
+import { ApiError, apiError } from "@/utils/api-error";
 
+const config = loadConfig();
 const app = new Hono();
 
-// Middleware
-app.use("*", logger());
-
-// app.use("/api/*", (c, next) => analytics(c, next)); // Enable if you want to see Analytics
-
-// Routes
-app.route("/api", routes);
-
-// Base route
-app.get("/", (c) => {
-  return c.json({
-    message: "Melon Music API",
-    endpoints: [
-      "/api/chart/top100",
-      "/api/chart/hot100",
-      "/api/chart/day",
-      "/api/chart/week",
-      "/api/chart/month",
-      "/api/song/:songId",
-      "/api/album/:albumId",
-    ],
-  });
+app.use("*", async (c, next) => {
+  const startedAt = performance.now();
+  await next();
+  console.info(`${c.req.method} ${c.req.path} ${c.res.status} ${Math.round(performance.now() - startedAt)}ms`);
 });
 
-// Initialize chart pre-fetching if enabled
-// This helps with performance in standalone server mode
-const enablePrefetch = process.env.ENABLE_CHART_PREFETCH === "true"; // Default to false if not specified
-const prefetchInterval = parseInt(
-  process.env.PREFETCH_INTERVAL_MS || "60000", // Default to 1 minute
-  10
-);
+app.onError((error, c) => {
+  if (error instanceof ApiError) {
+    return apiError(c, error.status, error.code, error.message);
+  }
+  console.error("Unhandled API error:", error.message);
+  return apiError(c, 500, "INTERNAL_ERROR", "The request could not be completed.");
+});
 
-if (enablePrefetch) {
+app.notFound((c) => apiError(c, 404, "NOT_FOUND", "The requested endpoint was not found."));
+
+app.get("/health", (c) => c.json({ status: "ok" }));
+app.route("/api", routes);
+
+app.get("/", (c) => c.json({
+  message: "Melon Music API",
+  endpoints: [
+    "/health",
+    "/api/chart/top100",
+    "/api/chart/hot100",
+    "/api/chart/day",
+    "/api/chart/week",
+    "/api/chart/month",
+    "/api/song/:songId",
+    "/api/album/:albumId",
+  ],
+}));
+
+if (config.enableChartPrefetch) {
   chartPrefetcher.updateConfig({
     enabled: true,
-    intervalMs: prefetchInterval,
+    intervalMs: config.prefetchIntervalMs,
     onSuccess: (type) => console.log(`[Prefetch] Chart data updated: ${type}`),
-    onError: (type, error) =>
-      console.error(
-        `[Prefetch] Failed to update ${type} chart:`,
-        error.message
-      ),
+    onError: (type, error) => console.error(`[Prefetch] Failed to update ${type} chart:`, error.message),
   });
-
   chartPrefetcher.start();
 
-  // Add shutdown handler for clean process termination
   const shutdownHandler = () => {
-    console.log("Stopping chart pre-fetcher...");
     chartPrefetcher.stop();
     process.exit(0);
   };
-
   process.on("SIGINT", shutdownHandler);
   process.on("SIGTERM", shutdownHandler);
 }

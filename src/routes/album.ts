@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getAlbumData } from "@/services/album";
+import { apiError } from "@/utils/api-error";
 
 const album = new Hono();
 
@@ -7,7 +8,7 @@ album.get("/:albumId", async (c) => {
   const albumId = c.req.param("albumId");
 
   if (!albumId || !/^\d+$/.test(albumId)) {
-    return c.json({ error: "Invalid album ID. Must be a number." }, 400);
+    return apiError(c, 400, "INVALID_ALBUM_ID", "Album ID must be numeric.");
   }
 
   const result = await getAlbumData(albumId);
@@ -15,8 +16,13 @@ album.get("/:albumId", async (c) => {
   return result.match(
     (data) => c.json(data),
     (error) => {
-      console.error("Error fetching album data:", error.message);
-      return c.json({ error: error.message }, 404);
+      const notFound = error.message.startsWith("Album not found:");
+      return apiError(
+        c,
+        notFound ? 404 : 502,
+        notFound ? "ALBUM_NOT_FOUND" : "UPSTREAM_ERROR",
+        notFound ? "The requested album was not found." : "Album data is temporarily unavailable."
+      );
     }
   );
 });

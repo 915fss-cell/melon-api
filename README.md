@@ -16,13 +16,29 @@ To run:
 bun run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000. Runtime settings are optional and validated at startup:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `3000` | HTTP server port |
+| `ENABLE_CHART_PREFETCH` | `false` | Enable background chart prefetching |
+| `PREFETCH_INTERVAL_MS` | `60000` | Interval between prefetch cycles |
+| `MELON_MIN_REQUEST_INTERVAL_MS` | `1000` | Minimum spacing between outbound Melon requests |
+
+See `.env.example` for a local configuration template. No API credentials are required.
+
+## Deployment
+
+`wrangler.toml` currently configures a Cloudflare Workers entry point at `build/index.js` and invokes `bun run build`. The deployment target and generated bundle have not been verified in this audit; confirm Bun/Hono/Cheerio compatibility and the build output before deploying. No deployment was performed.
 
 ## API Documentation
 
 ### Base Endpoint
 
 - `GET /` - Returns basic API information and available endpoints
+- `GET /health` - Returns `{ "status": "ok" }` when the API process is ready
+
+Invalid requests return a consistent JSON error, for example `{ "error": { "code": "NOT_FOUND", "message": "The requested endpoint was not found." } }`. Invalid IDs and chart types use HTTP 400, missing records use 404, and temporary Melon/upstream failures use 502.
 
 ### Chart Endpoints
 
@@ -143,7 +159,7 @@ The album endpoint returns detailed information about a specific album:
 
 ### Caching
 
-Chart data is cached for 1 minute to improve performance and reduce load on the Melon website.
+Chart data is cached for 1 minute to improve performance and reduce load on the Melon website. Concurrent cold requests for the same resource share a single fetch, and outbound Melon requests are spaced by at least 1 second by default (`MELON_MIN_REQUEST_INTERVAL_MS`). The cache is process-local and bounded to 500 entries.
 
 ### Chart Prefetching
 
@@ -169,22 +185,9 @@ When prefetching is enabled, the server will:
 - Log success/failure messages for each prefetch operation
 - Properly shutdown the prefetcher when the server terminates
 
-### Analytics
+### Request Logging
 
-The API includes an analytics middleware that tracks:
-
-- Request ID
-- HTTP method
-- Path
-- Full URL
-- IP address
-- User agent
-- Referer
-- Accept language
-- Response status code
-- Response time
-
-Analytics data is currently logged to the console but can be configured to send to a database or logging service.
+The server logs only the HTTP method, URL path (without query parameters), response status, and elapsed time. It does not log client IP addresses, user-agent headers, referrers, or full URLs.
 
 ### Direct Data Access
 
@@ -224,6 +227,10 @@ async function fetchAlbumDetails() {
   console.log(albumData);
 }
 ```
+
+### Development Checks
+
+Run the test suite with `bun test` and check types with `bun x tsc --noEmit`.
 
 ## Technical Details
 

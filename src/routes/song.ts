@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getSongData } from "@/services/song";
+import { apiError } from "@/utils/api-error";
 
 const song = new Hono();
 
@@ -7,7 +8,7 @@ song.get("/:songId", async (c) => {
   const songId = c.req.param("songId");
 
   if (!songId || !/^\d+$/.test(songId)) {
-    return c.json({ error: "Invalid song ID. Must be a number." }, 400);
+    return apiError(c, 400, "INVALID_SONG_ID", "Song ID must be numeric.");
   }
 
   const result = await getSongData(songId);
@@ -15,8 +16,13 @@ song.get("/:songId", async (c) => {
   return result.match(
     (data) => c.json(data),
     (error) => {
-      console.error("Error fetching song data:", error.message);
-      return c.json({ error: error.message }, 404);
+      const notFound = error.message.startsWith("Song not found:");
+      return apiError(
+        c,
+        notFound ? 404 : 502,
+        notFound ? "SONG_NOT_FOUND" : "UPSTREAM_ERROR",
+        notFound ? "The requested song was not found." : "Song data is temporarily unavailable."
+      );
     }
   );
 });

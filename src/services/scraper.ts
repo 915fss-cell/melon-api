@@ -2,6 +2,20 @@ import * as cheerio from "cheerio";
 import { Result, ok, err } from "neverthrow";
 import { ErrorTargetId, ERROR_MESSAGES } from "@/types/errors";
 import { ScraperConfig, DEFAULT_SCRAPER_CONFIG } from "@/types/scraper";
+import { loadConfig } from "@/config";
+
+let nextRequestAt = 0;
+let requestQueue = Promise.resolve();
+
+async function waitForRequestSlot(): Promise<void> {
+  const slot = requestQueue.then(async () => {
+    const delay = Math.max(0, nextRequestAt - Date.now());
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    nextRequestAt = Date.now() + loadConfig().melonMinRequestIntervalMs;
+  });
+  requestQueue = slot.catch(() => undefined);
+  await slot;
+}
 
 export class MelonScraper {
   private baseUrl: string;
@@ -89,6 +103,7 @@ export class MelonScraper {
     url: string,
     timeoutMs: number
   ): Promise<Response> {
+    await waitForRequestSlot();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
