@@ -11,30 +11,15 @@ export const dashboardPage = `<!doctype html>
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Chart navigation">
-        <a class="brand" href="/" aria-label="Charts Explorer home">
-          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>melon<span class="brand-light">charts</span></span>
-        </a>
-        <div class="nav-label">EXPLORE</div>
-        <nav class="chart-nav" aria-label="Jump to a chart">
-          <a class="nav-item" href="#chart-top100"><span class="nav-index">01</span><span>Top 100</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-hot100"><span class="nav-index">02</span><span>Hot 100 · 30 days</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-hot100_100"><span class="nav-index">03</span><span>Hot 100 · 100 days</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-day"><span class="nav-index">04</span><span>Daily chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-week"><span class="nav-index">05</span><span>Weekly chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-item" href="#chart-month"><span class="nav-index">06</span><span>Monthly chart</span><span class="nav-arrow" aria-hidden="true">↗</span></a>
-        </nav>
-        <div class="sidebar-bottom">
-          <span class="live-dot" aria-hidden="true"></span>
-          <span>Connected to Melon</span>
-          <span class="sidebar-version">API</span>
-        </div>
-      </aside>
-
       <main class="main-content">
         <header class="topbar">
-          <div class="breadcrumb"><span>CHARTS</span><span class="breadcrumb-sep">/</span><strong>EXPLORER</strong></div>
+          <a class="brand topbar-brand" href="/" aria-label="Charts Explorer home">
+            <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span>melon<span class="brand-light">charts</span></span>
+          </a>
+          <nav class="top-navigation" aria-label="Main navigation">
+            <a class="top-nav-item" href="/" aria-current="page">Chart Explorer</a>
+          </nav>
           <a class="api-status" href="/health" target="_blank" rel="noreferrer"><span class="live-dot" aria-hidden="true"></span><span>API online</span></a>
         </header>
 
