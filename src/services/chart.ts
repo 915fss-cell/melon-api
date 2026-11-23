@@ -1,6 +1,6 @@
-import { MelonScraper } from "@/services/scraper";
-import { ChartTypes, MelonTrack } from "@/types/charts";
-import { CacheService } from "@/utils/cache";
+import { MelonScraper } from "./scraper.js";
+import { ChartTypes, MelonTrack } from "../types/charts.js";
+import { CacheService } from "../utils/cache.js";
 import { Result, ok, err } from "neverthrow";
 
 export class MelonChartService {

@@ -1,5 +1,5 @@
-import { getMelonChart } from "@/services/chart";
-import { CacheService } from "@/utils/cache";
+import { getMelonChart } from "../services/chart.js";
+import { CacheService } from "./cache.js";
 
 // Chart types available for pre-fetching
 const CHART_TYPES = ["top100", "hot100", "day", "week", "month"];

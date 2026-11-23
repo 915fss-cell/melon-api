@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { getSongData } from "@/services/song";
-import { apiError } from "@/utils/api-error";
+import { getSongData } from "../services/song.js";
+import { apiError } from "../utils/api-error.js";
 
 const song = new Hono();
 

@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import routes from "@/routes";
-import { chartPrefetcher } from "@/utils/prefetch";
-import { loadConfig } from "@/config";
-import { ApiError, apiError } from "@/utils/api-error";
-import { dashboardClient } from "@/frontend/client";
-import { dashboardPage } from "@/frontend/page";
-import { dashboardStyles } from "@/frontend/styles";
+import routes from "./routes/index.js";
+import { chartPrefetcher } from "./utils/prefetch.js";
+import { loadConfig } from "./config.js";
+import { ApiError, apiError } from "./utils/api-error.js";
+import { dashboardClient } from "./frontend/client.js";
+import { dashboardPage } from "./frontend/page.js";
+import { dashboardStyles } from "./frontend/styles.js";
 
 const config = loadConfig();
 const app = new Hono();

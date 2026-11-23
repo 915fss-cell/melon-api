@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { getMelonChart } from "@/services/chart";
-import { apiError } from "@/utils/api-error";
+import { getMelonChart } from "../services/chart.js";
+import { apiError } from "../utils/api-error.js";
 
 const chart = new Hono();
 

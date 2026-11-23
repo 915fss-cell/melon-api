@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio";
 import { Result, ok, err } from "neverthrow";
-import { ErrorTargetId, ERROR_MESSAGES } from "@/types/errors";
-import { ScraperConfig, DEFAULT_SCRAPER_CONFIG } from "@/types/scraper";
-import { loadConfig } from "@/config";
+import { ErrorTargetId, ERROR_MESSAGES } from "../types/errors.js";
+import { ScraperConfig, DEFAULT_SCRAPER_CONFIG } from "../types/scraper.js";
+import { loadConfig } from "../config.js";
 
 let nextRequestAt = 0;
 let requestQueue = Promise.resolve();
