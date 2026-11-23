@@ -101,7 +101,9 @@ describe("API foundation", () => {
 
     expect(page.status).toBe(200);
     expect(page.headers.get("content-type")).toContain("text/html");
-    expect(await page.text()).toContain("Melon Charts — Music, ranked");
+    const pageText = await page.text();
+    expect(pageText).toContain("Charts Explorer — Melon Charts");
+    expect(pageText).toContain('id="chart-sections"');
     expect(script.headers.get("content-type")).toContain("text/javascript");
     expect(await script.text()).toContain("/api/chart/");
     expect(styles.headers.get("content-type")).toContain("text/css");
