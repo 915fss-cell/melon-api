@@ -3,6 +3,11 @@ import { ChartTypes, MelonTrack } from "../types/charts.js";
 import { CacheService } from "../utils/cache.js";
 import { Result, ok, err } from "neverthrow";
 
+export interface MelonChartData {
+  tracks: MelonTrack[];
+  officialTime: string | null;
+}
+
 export class MelonChartService {
   private scraper: MelonScraper;
   public CHART_TYPES: ChartTypes;
@@ -23,12 +28,12 @@ export class MelonChartService {
   /**
    * Fetch and parse the specified Melon chart
    * @param chartType - Type of chart to fetch ('top100', 'hot100', 'day', 'week', 'month')
-   * @returns - Result containing list of tracks or an error
+   * @returns - Result containing tracks and the official chart time or an error
    */
   async getChart(
     chartType: string = "top100",
     hot100Period: string = "30"
-  ): Promise<Result<MelonTrack[], Error>> {
+  ): Promise<Result<MelonChartData, Error>> {
     if (!this.CHART_TYPES.hasOwnProperty(chartType)) {
       return err(
         new Error(
@@ -49,6 +54,12 @@ export class MelonChartService {
     // Fix using andThen instead of map
     return htmlResult.andThen(($) => {
       try {
+        const officialDate = $(".calendar_prid .yyyymmdd").first().text().replace(/\s+/g, " ").trim();
+        const officialHour = $(".calendar_prid .hour").first().text().trim();
+        const timeSuffix = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(officialHour)
+          ? ` ${officialHour}`
+          : "";
+        const officialTime = officialDate ? `${officialDate}${timeSuffix}` : null;
         const chartList = $("tbody > tr");
         const tracks: MelonTrack[] = [];
 
@@ -149,7 +160,7 @@ export class MelonChartService {
           }
         });
 
-        return ok(tracks);
+        return ok({ tracks, officialTime });
       } catch (error) {
         return err(
           error instanceof Error
@@ -170,12 +181,12 @@ export function getMelonChartCacheKey(chartType: string, hot100Period = "30"): s
 /**
  * Get Melon chart data with caching
  * @param chartType The type of chart to fetch
- * @returns Result containing array of track objects or an error
+ * @returns Result containing tracks and Melon's official chart time or an error
  */
-export async function getMelonChart(
+export async function getMelonChartData(
   chartType: string,
   hot100Period: string = "30"
-): Promise<Result<MelonTrack[], Error>> {
+): Promise<Result<MelonChartData, Error>> {
   // Validate chart type
   if (!Object.keys(chartService.CHART_TYPES).includes(chartType)) {
     const errorMessage = `Invalid chart type '${chartType}'. Choose from: ${Object.keys(
@@ -186,7 +197,7 @@ export async function getMelonChart(
   }
 
   try {
-    return await CacheService.getOrFetchResult<MelonTrack[]>(
+    return await CacheService.getOrFetchResult<MelonChartData>(
       getMelonChartCacheKey(chartType, hot100Period),
       async () => {
         try {
@@ -222,4 +233,13 @@ export async function getMelonChart(
         : new Error("Cache service failed")
     );
   }
+}
+
+export async function getMelonChart(
+  chartType: string,
+  hot100Period: string = "30"
+): Promise<Result<MelonTrack[], Error>> {
+  return (await getMelonChartData(chartType, hot100Period)).map(
+    ({ tracks }) => tracks
+  );
 }

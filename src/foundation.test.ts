@@ -58,6 +58,10 @@ describe("cache", () => {
 });
 
 const chartFixture = `
+  <div class="calendar_prid">
+    <span class="yyyymmdd">2026.11.23</span>
+    <span class="hhmm"><span class="hour">23:00</span></span>
+  </div>
   <table><tbody><tr><td>
     <span class="rank">1</span>
     <a href="javascript:melon.play.playSong('100', 12345);">play</a>
@@ -68,6 +72,20 @@ const chartFixture = `
     <span class="bullet_icons rank_static"></span>
   </td></tr></tbody></table>
 `;
+
+const chartFixtures: Record<string, string> = {
+  top100: chartFixture,
+  hot100: chartFixture,
+  day: chartFixture
+    .replace("2026.11.23", "2026.11.22")
+    .replace("23:00", "장르종합"),
+  week: chartFixture
+    .replace("2026.11.23", "2026.11.16 ~ 2026.11.22")
+    .replace('    <span class="hhmm"><span class="hour">23:00</span></span>\n', ""),
+  month: chartFixture
+    .replace("2026.11.23", "2026.10")
+    .replace('    <span class="hhmm"><span class="hour">23:00</span></span>\n', ""),
+};
 
 describe("API foundation", () => {
   test("exposes a health check", async () => {
@@ -107,16 +125,33 @@ describe("API foundation", () => {
     const originalFetch = globalThis.fetch;
     const originalInterval = process.env.MELON_MIN_REQUEST_INTERVAL_MS;
     process.env.MELON_MIN_REQUEST_INTERVAL_MS = "1";
-    globalThis.fetch = (async () => new Response(chartFixture, { status: 200 })) as typeof fetch;
+    globalThis.fetch = (async (input) => {
+      const path = new URL(String(input)).pathname;
+      const chartType = path.includes("/hot100/")
+        ? "hot100"
+        : path.includes("/day/")
+          ? "day"
+          : path.includes("/week/")
+            ? "week"
+            : path.includes("/month/")
+              ? "month"
+              : "top100";
+      return new Response(chartFixtures[chartType], { status: 200 });
+    }) as typeof fetch;
     CacheService.clear();
 
     try {
+      const expectedTimes: Record<string, string> = {
+        top100: "2026.11.23 23:00",
+        hot100: "2026.11.23 23:00",
+        day: "2026.11.22",
+        week: "2026.11.16 ~ 2026.11.22",
+        month: "2026.10",
+      };
       for (const chartType of ["top100", "hot100", "day", "week", "month"]) {
         const response = await app.request(`/api/chart/${chartType}`);
         expect(response.status).toBe(200);
-        const updatedAt = response.headers.get("X-Chart-Updated-At");
-        expect(updatedAt).not.toBeNull();
-        expect(Number.isNaN(Date.parse(updatedAt ?? ""))).toBe(false);
+        expect(response.headers.get("X-Melon-Chart-Time")).toBe(expectedTimes[chartType]!);
         expect(await response.json()).toEqual([
           {
             rank: "1",
@@ -168,10 +203,10 @@ describe("Hot 100 period handling", () => {
       expect(thirtyDay.status).toBe(200);
       expect(thirtyDayCached.status).toBe(200);
       expect(hundredDay.status).toBe(200);
-      expect(thirtyDayCached.headers.get("X-Chart-Updated-At")).toBe(
-        thirtyDay.headers.get("X-Chart-Updated-At")
+      expect(thirtyDayCached.headers.get("X-Melon-Chart-Time")).toBe(
+        thirtyDay.headers.get("X-Melon-Chart-Time")
       );
-      expect(hundredDay.headers.get("X-Chart-Updated-At")).not.toBeNull();
+      expect(hundredDay.headers.get("X-Melon-Chart-Time")).toBe("2026.11.23 23:00");
       expect((await thirtyDay.json())[0]?.title).toBe("30-day Track");
       expect((await thirtyDayCached.json())[0]?.title).toBe("30-day Track");
       expect((await hundredDay.json())[0]?.title).toBe("100-day Track");
