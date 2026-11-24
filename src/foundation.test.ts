@@ -7,7 +7,6 @@ import { getMelonChart } from "@/services/chart";
 import { getSongData } from "@/services/song";
 import { getAlbumData } from "@/services/album";
 import { findNearestChartSnapshot, findNearestSnapshot } from "@/services/snapshot-selection";
-import { rankMovementFromPrevious } from "@/services/chart-history";
 
 describe("saved snapshot time selection", () => {
   const selectedAt = new Date("2026-11-24T21:00:00.000Z");
@@ -27,13 +26,6 @@ describe("saved snapshot time selection", () => {
       selectedAt,
       ["top100"],
     )).toBe(matchingChart);
-  });
-
-  test("calculates movement from the previous saved hourly rank", () => {
-    expect(rankMovementFromPrevious(8, 5)).toEqual({ direction: "up", value: 3 });
-    expect(rankMovementFromPrevious(5, 8)).toEqual({ direction: "down", value: 3 });
-    expect(rankMovementFromPrevious(5, 5)).toEqual({ direction: "static", value: 0 });
-    expect(rankMovementFromPrevious(null, 5)).toBeNull();
   });
 
   test("selects the nearest saved run when it is offset from the requested minute", () => {

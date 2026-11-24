@@ -66,18 +66,6 @@ function rankValue(value: string | null | undefined): number | null {
   return Number.isInteger(rank) && rank > 0 ? rank : null;
 }
 
-export function rankMovementFromPrevious(
-  previousRank: number | null,
-  currentRank: number,
-): RankMovement {
-  if (previousRank === null) return null;
-  const delta = previousRank - currentRank;
-  return {
-    direction: delta > 0 ? "up" : delta < 0 ? "down" : "static",
-    value: Math.abs(delta),
-  };
-}
-
 function selectedCharts(chart: ChartHistoryOptions["chart"]): LiveChartKey[] {
   return chart === "all" ? chartKeys : [chart];
 }
@@ -223,8 +211,7 @@ export async function getChartHistory(options: ChartHistoryOptions) {
   const priorRanksFrom = options.snapshotMode && selectedSnapshot
     ? selectedSnapshot.capturedAt
     : options.from;
-  const priorRanks = await readPriorRanks(priorRanksFrom, targetPairs);
-  const lastRanks = new Map(priorRanks);
+  const lastRanks = await readPriorRanks(priorRanksFrom, targetPairs);
   const entries: ChartHistoryEntry[] = [];
 
   for (const snapshot of snapshots) {
@@ -291,27 +278,12 @@ export async function getChartHistory(options: ChartHistoryOptions) {
     : [];
   const uniqueTracks = new Set(entries.map((entry) => entry.songId));
   const snapshotTracks = selectedSnapshot
-    ? (selectedSnapshot.payload?.tracks ?? [])
-        .filter((track) =>
-          track.songId &&
-          matchesSearch(track, options) &&
-          charts.some((chartKey) => rankValue(track.positions?.[chartKey]?.rank) !== null &&
-            !selectedSnapshot.payload.unavailableCharts?.includes(HISTORY_CHARTS.find((chart) => chart.key === chartKey)!.label)),
-        )
-        .map((track) => {
-          const positions = { ...track.positions };
-          for (const chartKey of charts) {
-            const position = positions[chartKey];
-            const currentRank = rankValue(position?.rank);
-            if (!position || currentRank === null) continue;
-            const previousRank = priorRanks.get(pairKey(track.songId, chartKey)) ?? null;
-            const savedMovement = rankMovementFromPrevious(previousRank, currentRank);
-            if (savedMovement) {
-              positions[chartKey] = { ...position, movement: savedMovement, rankChange: savedMovement };
-            }
-          }
-          return { ...track, positions };
-        })
+    ? (selectedSnapshot.payload?.tracks ?? []).filter((track) =>
+        track.songId &&
+        matchesSearch(track, options) &&
+        charts.some((chartKey) => rankValue(track.positions?.[chartKey]?.rank) !== null &&
+          !selectedSnapshot.payload.unavailableCharts?.includes(HISTORY_CHARTS.find((chart) => chart.key === chartKey)!.label)),
+      )
     : [];
   const oldest = entries.reduce<string | null>(
     (value, entry) => value === null || entry.capturedAt < value ? entry.capturedAt : value,
