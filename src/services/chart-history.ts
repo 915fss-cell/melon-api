@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gt, gte, lt, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { liveFilterSnapshots } from "../db/schema.js";
+import { findNearestSnapshot } from "./snapshot-selection.js";
 import type { LiveChartKey, LiveChartPosition, LiveFilterData } from "./playlist.js";
 
 export const HISTORY_CHARTS: Array<{ key: LiveChartKey; label: string }> = [
@@ -52,6 +53,7 @@ export interface ChartHistoryOptions {
   page: number;
   pageSize: number;
   snapshotMode?: boolean;
+  snapshotAt?: Date;
 }
 
 function pairKey(songId: string, chartKey: LiveChartKey): string {
@@ -183,7 +185,13 @@ async function readPriorRanks(
 }
 
 export async function getChartHistory(options: ChartHistoryOptions) {
-  const snapshots = await readRange(options.from, options.toExclusive);
+  const rangeSnapshots = await readRange(options.from, options.toExclusive);
+  const selectedSnapshot = options.snapshotMode && options.snapshotAt
+    ? findNearestSnapshot(rangeSnapshots, options.snapshotAt)
+    : undefined;
+  const snapshots = options.snapshotMode
+    ? selectedSnapshot ? [selectedSnapshot] : []
+    : rangeSnapshots;
   const charts = selectedCharts(options.chart);
   const targetPairs = new Set<string>();
 
@@ -264,7 +272,6 @@ export async function getChartHistory(options: ChartHistoryOptions) {
         .slice(-1000)
     : [];
   const uniqueTracks = new Set(entries.map((entry) => entry.songId));
-  const selectedSnapshot = options.snapshotMode ? snapshots[snapshots.length - 1] : undefined;
   const snapshotTracks = selectedSnapshot
     ? (selectedSnapshot.payload?.tracks ?? []).filter((track) =>
         track.songId &&

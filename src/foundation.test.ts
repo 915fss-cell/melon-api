@@ -6,6 +6,31 @@ import { err, ok } from "neverthrow";
 import { getMelonChart } from "@/services/chart";
 import { getSongData } from "@/services/song";
 import { getAlbumData } from "@/services/album";
+import { findNearestSnapshot } from "@/services/snapshot-selection";
+
+describe("saved snapshot time selection", () => {
+  const selectedAt = new Date("2026-11-24T21:00:00.000Z");
+
+  test("selects the nearest saved run when it is offset from the requested minute", () => {
+    const earlier = { id: "earlier", capturedAt: new Date("2026-11-24T19:22:30.000Z") };
+    const nearest = { id: "nearest", capturedAt: new Date("2026-11-24T21:34:27.000Z") };
+
+    expect(findNearestSnapshot([earlier, nearest], selectedAt)).toBe(nearest);
+  });
+
+  test("returns no snapshot when the nearest run is more than one hour away", () => {
+    const distant = { id: "distant", capturedAt: new Date("2026-11-24T19:59:59.000Z") };
+
+    expect(findNearestSnapshot([distant], selectedAt)).toBeUndefined();
+  });
+
+  test("prefers the earlier run when two snapshots are equally close", () => {
+    const earlier = { id: "earlier", capturedAt: new Date("2026-11-24T20:30:00.000Z") };
+    const later = { id: "later", capturedAt: new Date("2026-11-24T21:30:00.000Z") };
+
+    expect(findNearestSnapshot([later, earlier], selectedAt)).toBe(earlier);
+  });
+});
 
 describe("application configuration", () => {
   test("uses documented defaults", () => {
