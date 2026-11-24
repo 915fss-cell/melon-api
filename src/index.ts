@@ -6,6 +6,9 @@ import { ApiError, apiError } from "./utils/api-error.js";
 import { dashboardClient } from "./frontend/client.js";
 import { dashboardPage } from "./frontend/page.js";
 import { dashboardStyles } from "./frontend/styles.js";
+import { liveFilterClient } from "./frontend/live-filter-client.js";
+import { liveFilterPage } from "./frontend/live-filter-page.js";
+import { liveFilterStyles } from "./frontend/live-filter-styles.js";
 
 const config = loadConfig();
 const app = new Hono();
@@ -37,6 +40,15 @@ app.get("/app.js", (c) => c.body(dashboardClient, 200, {
   "Content-Type": "text/javascript; charset=utf-8",
   "Cache-Control": "no-cache",
 }));
+app.get("/live-filter.css", (c) => c.body(liveFilterStyles, 200, {
+  "Content-Type": "text/css; charset=utf-8",
+  "Cache-Control": "no-cache",
+}));
+app.get("/live-filter.js", (c) => c.body(liveFilterClient, 200, {
+  "Content-Type": "text/javascript; charset=utf-8",
+  "Cache-Control": "no-cache",
+}));
+app.get("/live-filter", (c) => c.html(liveFilterPage));
 app.get("/", (c) => c.html(dashboardPage));
 
 if (config.enableChartPrefetch) {

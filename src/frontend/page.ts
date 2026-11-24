@@ -19,6 +19,7 @@ export const dashboardPage = `<!doctype html>
           </a>
           <nav class="top-navigation" aria-label="Main navigation">
             <a class="top-nav-item" href="/" aria-current="page">Chart Explorer</a>
+            <a class="top-nav-item" href="/live-filter">Live Filter</a>
           </nav>
           <a class="api-status" href="/health" target="_blank" rel="noreferrer"><span class="live-dot" aria-hidden="true"></span><span>API online</span></a>
         </header>
