@@ -8,7 +8,7 @@ export const historyPage = `<!doctype html>
     <title>Chart History — Melon Charts</title>
     <link rel="preconnect" href="https://cdnimg.melon.co.kr" crossorigin />
     <link rel="stylesheet" href="/app.css?v=5" />
-    <link rel="stylesheet" href="/history.css?v=1" />
+    <link rel="stylesheet" href="/history.css?v=2" />
   </head>
   <body>
     <div class="app-shell">
@@ -38,6 +38,16 @@ export const historyPage = `<!doctype html>
               <strong>South Korea · Melon</strong>
               <span>Only market currently stored</span>
             </div>
+          </section>
+
+          <section class="history-time-selector" aria-label="Choose a saved snapshot date and time">
+            <button id="snapshot-previous-day" type="button" aria-label="Previous day">«</button>
+            <button id="snapshot-previous" type="button" aria-label="Previous hour">‹</button>
+            <label for="snapshot-at">SNAPSHOT DATE &amp; TIME</label>
+            <input id="snapshot-at" type="datetime-local" step="60" />
+            <button id="snapshot-next" type="button" aria-label="Next hour">›</button>
+            <button id="snapshot-next-day" type="button" aria-label="Next day">»</button>
+            <button id="snapshot-clear" type="button">Show date range</button>
           </section>
 
           <section class="history-filters" aria-label="Filter saved chart history">
@@ -84,6 +94,6 @@ export const historyPage = `<!doctype html>
         </div>
       </main>
     </div>
-    <script type="module" src="/history.js?v=1"></script>
+    <script type="module" src="/history.js?v=2"></script>
   </body>
 </html>`;

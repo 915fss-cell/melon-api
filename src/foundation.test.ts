@@ -115,7 +115,9 @@ describe("API foundation", () => {
     const styles = await app.request("/history.css");
 
     expect(page.status).toBe(200);
-    expect((await page.text())).toContain("Chart History — Melon Charts");
+    const pageText = await page.text();
+    expect(pageText).toContain("Chart History — Melon Charts");
+    expect(pageText).toContain('id="snapshot-at"');
     expect((await script.text())).toContain("/api/playlist/history");
     expect(styles.headers.get("content-type")).toContain("text/css");
   });
@@ -124,10 +126,12 @@ describe("API foundation", () => {
     const invalidChart = await app.request("/api/playlist/history?chart=unknown");
     const invalidDate = await app.request("/api/playlist/history?from=2026-02-30");
     const unsupportedMarket = await app.request("/api/playlist/history?market=US");
+    const invalidSnapshotTime = await app.request("/api/playlist/history?at=not-a-date");
 
     expect(invalidChart.status).toBe(400);
     expect(invalidDate.status).toBe(400);
     expect(unsupportedMarket.status).toBe(400);
+    expect(invalidSnapshotTime.status).toBe(400);
   });
 
   test("uses a consistent not-found error response", async () => {

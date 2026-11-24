@@ -32,8 +32,17 @@ function defaultRange() {
 history.get("/", async (c) => {
   const query = c.req.query();
   const fallback = defaultRange();
-  const from = query.from ? parseDate(query.from) : fallback.from;
-  const to = query.to ? parseDate(query.to) : fallback.to;
+  let from = query.from ? parseDate(query.from) : fallback.from;
+  let to = query.to ? parseDate(query.to) : fallback.to;
+  const selectedAt = query.at ? new Date(query.at) : null;
+  if (query.at && (!selectedAt || Number.isNaN(selectedAt.getTime()) || selectedAt.toISOString() !== query.at)) {
+    return apiError(c, 400, "INVALID_SNAPSHOT_TIME", "Snapshot time must be a valid ISO date-time.");
+  }
+  if (selectedAt) {
+    from = new Date(selectedAt);
+    from.setUTCSeconds(0, 0);
+    to = new Date(from);
+  }
   if (!from || !to) {
     return apiError(c, 400, "INVALID_DATE_RANGE", "Dates must use the YYYY-MM-DD format.");
   }
@@ -75,7 +84,8 @@ history.get("/", async (c) => {
   }
 
   const toExclusive = new Date(to);
-  toExclusive.setUTCDate(toExclusive.getUTCDate() + 1);
+  if (selectedAt) toExclusive.setUTCMinutes(toExclusive.getUTCMinutes() + 1);
+  else toExclusive.setUTCDate(toExclusive.getUTCDate() + 1);
   const data = await getChartHistory({
     from,
     toExclusive,
