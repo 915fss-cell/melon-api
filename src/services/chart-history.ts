@@ -51,6 +51,7 @@ export interface ChartHistoryOptions {
   sort: "date_desc" | "date_asc" | "rank_asc" | "rank_desc";
   page: number;
   pageSize: number;
+  snapshotMode?: boolean;
 }
 
 function pairKey(songId: string, chartKey: LiveChartKey): string {
@@ -263,6 +264,15 @@ export async function getChartHistory(options: ChartHistoryOptions) {
         .slice(-1000)
     : [];
   const uniqueTracks = new Set(entries.map((entry) => entry.songId));
+  const selectedSnapshot = options.snapshotMode ? snapshots[snapshots.length - 1] : undefined;
+  const snapshotTracks = selectedSnapshot
+    ? (selectedSnapshot.payload?.tracks ?? []).filter((track) =>
+        track.songId &&
+        matchesSearch(track, options) &&
+        charts.some((chartKey) => rankValue(track.positions?.[chartKey]?.rank) !== null &&
+          !selectedSnapshot.payload.unavailableCharts?.includes(HISTORY_CHARTS.find((chart) => chart.key === chartKey)!.label)),
+      )
+    : [];
   const oldest = entries.reduce<string | null>(
     (value, entry) => value === null || entry.capturedAt < value ? entry.capturedAt : value,
     null,
@@ -283,5 +293,12 @@ export async function getChartHistory(options: ChartHistoryOptions) {
     newest,
     market: { code: "KR", label: "South Korea · Melon" },
     trackSeries,
+    snapshot: selectedSnapshot
+      ? {
+          capturedAt: selectedSnapshot.capturedAt.toISOString(),
+          tracks: snapshotTracks,
+          unavailableCharts: selectedSnapshot.payload.unavailableCharts ?? [],
+        }
+      : null,
   };
 }

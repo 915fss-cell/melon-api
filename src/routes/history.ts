@@ -95,6 +95,7 @@ history.get("/", async (c) => {
     sort,
     page,
     pageSize,
+    snapshotMode: Boolean(selectedAt),
   });
   return c.json(data, 200, { "Cache-Control": "no-store" });
 });
