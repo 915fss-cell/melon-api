@@ -60,6 +60,17 @@ export const liveFilterPage = `<!doctype html>
             </div>
             <div class="live-footnote"><span>Rankings provided by Melon</span><span>Playlist refreshes every 5 minutes</span></div>
           </section>
+
+          <section class="charting-board" aria-labelledby="charting-title">
+            <div class="charting-heading">
+              <div><div class="section-overline">CHARTING TRACKS</div><h2 id="charting-title">Songs on the charts</h2><p>Browse your charting playlist by song or by chart.</p></div>
+              <div class="charting-view-toggle" role="group" aria-label="Organize charting songs">
+                <button type="button" class="charting-view-button is-active" data-charting-view="song" aria-pressed="true">♫ <span>Song</span></button>
+                <button type="button" class="charting-view-button" data-charting-view="chart" aria-pressed="false">▦ <span>Chart</span></button>
+              </div>
+            </div>
+            <div id="charting-content" class="charting-content" aria-live="polite"></div>
+          </section>
           <footer class="page-footer"><span>Made for the love of music.</span><span>Rankings provided by Melon · <a href="/health" target="_blank" rel="noreferrer">API status</a></span></footer>
         </div>
       </main>
