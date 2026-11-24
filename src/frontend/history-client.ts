@@ -67,10 +67,32 @@ function chartSvg(entries,label){
   const labels='<text x="'+left+'" y="'+(height-8)+'">'+escapeHtml(formatDate(entries[0].capturedAt,{month:'short',day:'numeric'}))+'</text><text text-anchor="end" x="'+(width-right)+'" y="'+(height-8)+'">'+escapeHtml(formatDate(entries[entries.length-1].capturedAt,{month:'short',day:'numeric'}))+'</text>';
   return '<svg class="rank-chart-svg" viewBox="0 0 '+width+' '+height+'" role="img" aria-label="'+escapeHtml(label)+' rank history, '+entries.length+' saved observations">'+grid+'<defs><linearGradient id="history-gradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#d5f277"/><stop offset="100%" stop-color="#d5f277" stop-opacity="0"/></linearGradient></defs><path class="rank-chart-area" d="'+areaPath+'"/><path class="rank-chart-line" d="'+linePath+'"/>'+circles+labels+'</svg><div class="history-chart-caption"><span>Rank #1 is highest</span><span>'+entries.length+' saved observations</span></div>';
 }
+function rankChangeDetail(entry){
+  if(entry.rankDelta===null)return entry.previousRank===null?'First saved observation':'Not available';
+  const places=Math.abs(entry.rankDelta)+' '+(Math.abs(entry.rankDelta)===1?'place':'places');
+  if(entry.rankDelta>0)return 'Up '+places+' (from #'+entry.previousRank+')';
+  if(entry.rankDelta<0)return 'Down '+places+' (from #'+entry.previousRank+')';
+  return 'No change (from #'+entry.previousRank+')';
+}
+function melonMovementDetail(entry){
+  const movement=entry.melonMovement;
+  if(movement?.direction==='up')return 'Up '+movement.value;
+  if(movement?.direction==='down')return 'Down '+movement.value;
+  if(movement?.direction==='new')return 'New entry';
+  if(movement?.direction==='reentry')return 'Re-entry';
+  if(movement?.direction==='static')return 'No change';
+  return 'Not recorded';
+}
+function renderTrackHistoryRows(series){
+  const rows=[...series].sort((left,right)=>right.capturedAt.localeCompare(left.capturedAt)||left.chartLabel.localeCompare(right.chartLabel));
+  $('#track-history-rows').innerHTML=rows.map((entry)=>'<tr><td><strong>'+escapeHtml(formatDate(entry.capturedAt))+'</strong><span>'+escapeHtml(formatDate(entry.capturedAt,{hour:'numeric',minute:'2-digit'}))+' KST</span></td><td>'+escapeHtml(entry.chartLabel)+'</td><td><strong>#'+escapeHtml(entry.rank)+'</strong></td><td>'+escapeHtml(rankChangeDetail(entry))+'</td><td>'+escapeHtml(melonMovementDetail(entry))+'</td><td>'+(Number.isInteger(entry.peakRank)&&entry.peakRank>0?'#'+escapeHtml(entry.peakRank):'—')+'</td><td>'+escapeHtml(entry.officialTime||'Not recorded')+'</td></tr>').join('');
+}
 function renderTrackDetail(series){
   const panel=$('#track-detail');
+  const details=$('#track-history-details');
   if(!state.track){panel.hidden=true;return;}
   panel.hidden=false;
+  details.hidden=!series.length;
   if(!series.length){$('#track-detail-title').textContent='Track history';$('#track-detail-subtitle').textContent='No saved observations for this track in the selected date range.';$('#track-chart').innerHTML='<div class="history-no-chart">Try widening the date range. No missing values are filled in.</div>';return;}
   const first=series[0];$('#track-detail-title').textContent=first.title;
   $('#track-detail-subtitle').textContent=(first.artists||[]).join(', ')+' · '+(state.chart==='all'?'All charts':first.chartLabel)+' · South Korea';
@@ -80,6 +102,7 @@ function renderTrackDetail(series){
   const groups=state.chart==='all'?chartOptions.filter((chart)=>chartSeries.some((entry)=>entry.chartKey===chart.key)).map((chart)=>({chart,entries:chartSeries.filter((entry)=>entry.chartKey===chart.key)})):[{chart:chartOptions.find((chart)=>chart.key===state.chart)||{key:first.chartKey,label:first.chartLabel},entries:chartSeries}];
   const metrics='<div class="history-detail-metrics"><span>Latest rank <strong>#'+latest.rank+'</strong></span><span>Change <strong>'+escapeHtml(change)+'</strong></span><span>Peak <strong>'+(Number.isInteger(latest.peakRank)&&latest.peakRank>0?'#'+latest.peakRank:'—')+'</strong></span></div>';
   $('#track-chart').innerHTML=metrics+groups.map((group)=>'<section class="history-detail-chart-group"><h3>'+escapeHtml(group.chart.label)+'</h3>'+chartSvg(group.entries,group.chart.label)+'</section>').join('');
+  renderTrackHistoryRows(series);
 }
 function renderPlaylistSongs(data){
   const select=$('#playlist-song-select');
@@ -122,7 +145,7 @@ async function loadData(){
     if(requestId!==state.requestId)return;
     setStatus(error instanceof Error?error.message:'Could not load saved chart history.','error');
     $('#history-empty').hidden=true;$('#history-pagination').hidden=true;
-    if(state.track){$('#track-detail').hidden=false;$('#track-chart').innerHTML='<div class="history-no-chart">Track history could not be loaded.</div>';}
+    if(state.track){$('#track-detail').hidden=false;$('#track-history-details').hidden=true;$('#track-chart').innerHTML='<div class="history-no-chart">Track history could not be loaded.</div>';}
   }
 }
 function updateFilters(){
