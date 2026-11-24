@@ -6,10 +6,27 @@ import { err, ok } from "neverthrow";
 import { getMelonChart } from "@/services/chart";
 import { getSongData } from "@/services/song";
 import { getAlbumData } from "@/services/album";
-import { findNearestSnapshot } from "@/services/snapshot-selection";
+import { findNearestChartSnapshot, findNearestSnapshot } from "@/services/snapshot-selection";
 
 describe("saved snapshot time selection", () => {
   const selectedAt = new Date("2026-11-24T21:00:00.000Z");
+
+  test("matches saved chart data by official chart time, not collection time", () => {
+    const matchingChart = {
+      capturedAt: new Date("2026-11-24T13:00:00.000Z"),
+      payload: { tracks: [{ positions: { top100: { officialTime: "2026.11.25 06:00" } } }] },
+    };
+    const closerCaptureButDifferentChartTime = {
+      capturedAt: new Date("2026-11-24T20:59:00.000Z"),
+      payload: { tracks: [{ positions: { top100: { officialTime: "2026.11.25 04:00" } } }] },
+    };
+
+    expect(findNearestChartSnapshot(
+      [closerCaptureButDifferentChartTime, matchingChart],
+      selectedAt,
+      ["top100"],
+    )).toBe(matchingChart);
+  });
 
   test("selects the nearest saved run when it is offset from the requested minute", () => {
     const earlier = { id: "earlier", capturedAt: new Date("2026-11-24T19:22:30.000Z") };
