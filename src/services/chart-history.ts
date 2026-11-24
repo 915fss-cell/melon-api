@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gt, gte, lt, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { liveFilterSnapshots } from "../db/schema.js";
-import { findNearestSnapshot } from "./snapshot-selection.js";
+import { findNearestChartSnapshot } from "./snapshot-selection.js";
 import type { LiveChartKey, LiveChartPosition, LiveFilterData } from "./playlist.js";
 
 export const HISTORY_CHARTS: Array<{ key: LiveChartKey; label: string }> = [
@@ -185,9 +185,11 @@ async function readPriorRanks(
 }
 
 export async function getChartHistory(options: ChartHistoryOptions) {
-  const rangeSnapshots = await readRange(options.from, options.toExclusive);
+  const rangeSnapshots = options.snapshotMode && options.snapshotAt
+    ? await readRange(new Date("2000-01-01T00:00:00.000Z"), new Date("2100-01-01T00:00:00.000Z"))
+    : await readRange(options.from, options.toExclusive);
   const selectedSnapshot = options.snapshotMode && options.snapshotAt
-    ? findNearestSnapshot(rangeSnapshots, options.snapshotAt)
+    ? findNearestChartSnapshot(rangeSnapshots, options.snapshotAt, selectedCharts(options.chart))
     : undefined;
   const snapshots = options.snapshotMode
     ? selectedSnapshot ? [selectedSnapshot] : []
@@ -206,7 +208,10 @@ export async function getChartHistory(options: ChartHistoryOptions) {
     }
   }
 
-  const lastRanks = await readPriorRanks(options.from, targetPairs);
+  const priorRanksFrom = options.snapshotMode && selectedSnapshot
+    ? selectedSnapshot.capturedAt
+    : options.from;
+  const lastRanks = await readPriorRanks(priorRanksFrom, targetPairs);
   const entries: ChartHistoryEntry[] = [];
 
   for (const snapshot of snapshots) {
