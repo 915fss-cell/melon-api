@@ -18,6 +18,7 @@ export interface PlaylistTrack {
 export interface LiveChartPosition {
   rank: string;
   rankChange: MelonTrack["rankChange"];
+  officialTime: string | null;
 }
 
 export interface LiveFilterTrack extends PlaylistTrack {
@@ -142,6 +143,7 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
       playlistTrack.positions[source.key] = {
         rank: chartTrack.rank,
         rankChange: chartTrack.rankChange,
+        officialTime: result.value.officialTime,
       };
       if (!playlistTrack.imageUrl && chartTrack.imageUrl) {
         playlistTrack.imageUrl = chartTrack.imageUrl;
