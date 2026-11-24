@@ -73,13 +73,22 @@ function renderTrackDetail(series){
   panel.hidden=false;
   if(!series.length){$('#track-detail-title').textContent='Track history';$('#track-detail-subtitle').textContent='No saved observations for this track in the selected date range.';$('#track-chart').innerHTML='<div class="history-no-chart">Try widening the date range. No missing values are filled in.</div>';return;}
   const first=series[0];$('#track-detail-title').textContent=first.title;
-  $('#track-detail-subtitle').textContent=(first.artists||[]).join(', ')+' · '+first.chartLabel+' · South Korea';
+  $('#track-detail-subtitle').textContent=(first.artists||[]).join(', ')+' · '+(state.chart==='all'?'All charts':first.chartLabel)+' · South Korea';
   const latest=series[series.length-1];
   const change=latest.rankDelta===null?'No earlier saved rank':latest.rankDelta>0?'Improved '+latest.rankDelta+' places':latest.rankDelta<0?'Fell '+Math.abs(latest.rankDelta)+' places':'No change';
   const chartSeries=series.filter((entry)=>entry.chartKey===state.chart||state.chart==='all');
   const groups=state.chart==='all'?chartOptions.filter((chart)=>chartSeries.some((entry)=>entry.chartKey===chart.key)).map((chart)=>({chart,entries:chartSeries.filter((entry)=>entry.chartKey===chart.key)})):[{chart:chartOptions.find((chart)=>chart.key===state.chart)||{key:first.chartKey,label:first.chartLabel},entries:chartSeries}];
   const metrics='<div class="history-detail-metrics"><span>Latest rank <strong>#'+latest.rank+'</strong></span><span>Change <strong>'+escapeHtml(change)+'</strong></span><span>Peak <strong>'+(Number.isInteger(latest.peakRank)&&latest.peakRank>0?'#'+latest.peakRank:'—')+'</strong></span></div>';
   $('#track-chart').innerHTML=metrics+groups.map((group)=>'<section class="history-detail-chart-group"><h3>'+escapeHtml(group.chart.label)+'</h3>'+chartSvg(group.entries,group.chart.label)+'</section>').join('');
+}
+function renderPlaylistSongs(data){
+  const select=$('#playlist-song-select');
+  const songs=Array.isArray(data.playlistTracks)?[...data.playlistTracks]:[];
+  const selected=(data.trackSeries||[]).find((track)=>track.songId===state.track)||(data.rows||[]).find((track)=>track.songId===state.track);
+  if(state.track&&selected&&!songs.some((track)=>track.songId===state.track))songs.push(selected);
+  songs.sort((left,right)=>(left.title||'').localeCompare(right.title||''));
+  select.innerHTML='<option value="">Select a playlist song…</option>'+songs.map((track)=>'<option value="'+escapeHtml(track.songId)+'">'+escapeHtml(track.title||'Untitled track')+(track.artists?.length?' · '+escapeHtml(track.artists.join(', ')):'')+'</option>').join('');
+  select.value=state.track;
 }
 function renderData(data){
   state.data=data;
@@ -92,6 +101,7 @@ function renderData(data){
   $('#history-table-wrap').hidden=!hasRows;
   $('#history-empty').hidden=hasRows;
   if(hasRows)renderRows(rows);
+  renderPlaylistSongs(data);
   renderTrackDetail(data.trackSeries||[]);
   const pagination=$('#history-pagination');pagination.hidden=!hasRows||data.pageCount<=1;
   $('#page-status').textContent='Page '+data.page+' of '+Math.max(1,data.pageCount);
@@ -124,13 +134,14 @@ $('#date-from').value=state.from;$('#date-to').value=state.to;$('#snapshot-at').
 document.querySelectorAll('[data-history-view]').forEach((button)=>button.addEventListener('click',()=>{state.historyView=button.dataset.historyView||'song';document.querySelectorAll('[data-history-view]').forEach((item)=>{const selected=item===button;item.classList.toggle('is-active',selected);item.setAttribute('aria-pressed',String(selected))});if(state.data)renderSnapshot(state.data)}));
 function setSnapshotTime(value){state.at=value?new Date(value+':00+09:00').toISOString():'';state.track='';state.page=1;loadData();}
 $('#snapshot-at').addEventListener('change',(event)=>setSnapshotTime(event.currentTarget.value));
+$('#playlist-song-select').addEventListener('change',(event)=>{state.track=event.currentTarget.value;if(state.track){state.at='';$('#snapshot-at').value='';state.chart='all';$('#chart-filter').value='all';state.query='';$('#history-search').value='';}state.page=1;loadData();});
 function shiftSnapshot(amount){const input=$('#snapshot-at');const value=input.value||kstDateTimeValue(new Date());const base=new Date(value+':00Z');base.setUTCHours(base.getUTCHours()+amount);input.value=base.toISOString().slice(0,16);setSnapshotTime(input.value);}
 $('#snapshot-previous').addEventListener('click',()=>shiftSnapshot(-1));$('#snapshot-next').addEventListener('click',()=>shiftSnapshot(1));$('#snapshot-previous-day').addEventListener('click',()=>shiftSnapshot(-24));$('#snapshot-next-day').addEventListener('click',()=>shiftSnapshot(24));
 $('#snapshot-clear').addEventListener('click',()=>{state.at='';$('#snapshot-at').value='';loadData();});
 $('#date-from').addEventListener('change',()=>{state.at='';$('#snapshot-at').value='';updateFilters();});$('#date-to').addEventListener('change',()=>{state.at='';$('#snapshot-at').value='';updateFilters();});$('#chart-filter').addEventListener('change',updateFilters);$('#history-sort').addEventListener('change',updateFilters);$('#page-size').addEventListener('change',updateFilters);
 $('#history-search').addEventListener('input',(event)=>{state.query=event.currentTarget.value.trim();state.track='';state.page=1;window.clearTimeout(state.timer);state.timer=window.setTimeout(loadData,220);});
 $('#previous-page').addEventListener('click',()=>{if(state.page>1){state.page-=1;loadData();}});$('#next-page').addEventListener('click',()=>{state.page+=1;loadData();});
-$('#close-track-detail').addEventListener('click',()=>{state.track='';state.sort='date_desc';$('#history-sort').value=state.sort;state.page=1;loadData();});
+$('#close-track-detail').addEventListener('click',()=>{state.track='';$('#playlist-song-select').value='';state.sort='date_desc';$('#history-sort').value=state.sort;state.page=1;loadData();});
 document.addEventListener('click',(event)=>{const artistButton=event.target.closest('[data-artist-filter]');if(artistButton){state.query=artistButton.dataset.artistFilter||'';state.track='';state.page=1;$('#history-search').value=state.query;loadData();}});
 loadData();
 `;
