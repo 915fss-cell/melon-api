@@ -67,6 +67,18 @@ export const historyPage = `<!doctype html>
               <button class="history-close" id="close-track-detail" type="button">Close detail</button>
             </div>
             <div id="track-chart" class="track-chart"></div>
+            <section id="track-history-details" class="track-history-details" aria-labelledby="track-history-details-title" hidden>
+              <div class="track-history-details-heading">
+                <div><h3 id="track-history-details-title">Saved Melon observations</h3><p>Each row reflects a stored chart snapshot. Melon snapshots include rank, movement, peak, and chart time—not Spotify stream counts or continuous days-on-chart.</p></div>
+              </div>
+              <div class="track-history-table-wrap" role="region" aria-label="Saved Melon observations for this track" tabindex="0">
+                <table class="track-history-table">
+                  <caption class="sr-only">Saved Melon chart positions for the selected track</caption>
+                  <thead><tr><th scope="col">DATE CAPTURED</th><th scope="col">CHART</th><th scope="col">RANK</th><th scope="col">RANK CHANGE</th><th scope="col">MELON MOVEMENT</th><th scope="col">PEAK</th><th scope="col">OFFICIAL CHART TIME</th></tr></thead>
+                  <tbody id="track-history-rows"></tbody>
+                </table>
+              </div>
+            </section>
           </section>
 
           <section id="snapshot-charting" class="charting-board history-snapshot-board" aria-labelledby="snapshot-charting-title" hidden>

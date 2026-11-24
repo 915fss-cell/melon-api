@@ -163,8 +163,12 @@ describe("API foundation", () => {
     expect(pageText).toContain('id="playlist-song-select"');
     expect(pageText).toContain("CHART DATE &amp; TIME · KST");
     expect(pageText).toContain('id="snapshot-charting"');
+    expect(pageText).toContain('id="track-history-details"');
+    expect(pageText).toContain("MELON MOVEMENT");
+    expect(pageText).toContain("OFFICIAL CHART TIME");
     const scriptText = await script.text();
     expect(scriptText).toContain("/api/playlist/history");
+    expect(scriptText).toContain("renderTrackHistoryRows");
     expect(scriptText).toContain("Asia/Seoul");
     expect(styles.headers.get("content-type")).toContain("text/css");
   });
