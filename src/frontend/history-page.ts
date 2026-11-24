@@ -41,13 +41,14 @@ export const historyPage = `<!doctype html>
             </div>
           </section>
 
-          <section class="history-time-selector" aria-label="Choose a saved snapshot date and time">
-            <button id="snapshot-previous-day" type="button" aria-label="Previous day">«</button>
-            <button id="snapshot-previous" type="button" aria-label="Previous hour">‹</button>
-            <label for="snapshot-at">SNAPSHOT DATE &amp; TIME</label>
-            <input id="snapshot-at" type="datetime-local" step="60" />
-            <button id="snapshot-next" type="button" aria-label="Next hour">›</button>
-            <button id="snapshot-next-day" type="button" aria-label="Next day">»</button>
+          <section class="history-time-selector" aria-label="Choose a chart date and time in Korea Standard Time">
+            <button id="snapshot-previous-day" type="button" aria-label="Previous day in Korea Standard Time">«</button>
+            <button id="snapshot-previous" type="button" aria-label="Previous hour in Korea Standard Time">‹</button>
+            <label for="snapshot-at">CHART DATE &amp; TIME · KST</label>
+            <input id="snapshot-at" type="datetime-local" step="60" aria-describedby="snapshot-timezone-note" />
+            <span id="snapshot-timezone-note" class="sr-only">Times are shown in Korea Standard Time.</span>
+            <button id="snapshot-next" type="button" aria-label="Next hour in Korea Standard Time">›</button>
+            <button id="snapshot-next-day" type="button" aria-label="Next day in Korea Standard Time">»</button>
             <button id="snapshot-clear" type="button">Show date range</button>
           </section>
 
