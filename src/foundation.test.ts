@@ -109,6 +109,27 @@ describe("API foundation", () => {
     expect(styles.headers.get("content-type")).toContain("text/css");
   });
 
+  test("serves the saved chart history page and assets", async () => {
+    const page = await app.request("/history");
+    const script = await app.request("/history.js");
+    const styles = await app.request("/history.css");
+
+    expect(page.status).toBe(200);
+    expect((await page.text())).toContain("Chart History — Melon Charts");
+    expect((await script.text())).toContain("/api/playlist/history");
+    expect(styles.headers.get("content-type")).toContain("text/css");
+  });
+
+  test("validates history filters before querying saved snapshots", async () => {
+    const invalidChart = await app.request("/api/playlist/history?chart=unknown");
+    const invalidDate = await app.request("/api/playlist/history?from=2026-02-30");
+    const unsupportedMarket = await app.request("/api/playlist/history?market=US");
+
+    expect(invalidChart.status).toBe(400);
+    expect(invalidDate.status).toBe(400);
+    expect(unsupportedMarket.status).toBe(400);
+  });
+
   test("uses a consistent not-found error response", async () => {
     const response = await app.request("/api/unknown-endpoint");
     expect(response.status).toBe(404);

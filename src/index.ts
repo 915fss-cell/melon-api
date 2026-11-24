@@ -9,6 +9,9 @@ import { dashboardStyles } from "./frontend/styles.js";
 import { liveFilterClient } from "./frontend/live-filter-client.js";
 import { liveFilterPage } from "./frontend/live-filter-page.js";
 import { liveFilterStyles } from "./frontend/live-filter-styles.js";
+import { historyClient } from "./frontend/history-client.js";
+import { historyPage } from "./frontend/history-page.js";
+import { historyStyles } from "./frontend/history-styles.js";
 
 const config = loadConfig();
 const app = new Hono();
@@ -49,6 +52,15 @@ app.get("/live-filter.js", (c) => c.body(liveFilterClient, 200, {
   "Cache-Control": "no-cache",
 }));
 app.get("/live-filter", (c) => c.html(liveFilterPage));
+app.get("/history.css", (c) => c.body(historyStyles, 200, {
+  "Content-Type": "text/css; charset=utf-8",
+  "Cache-Control": "no-cache",
+}));
+app.get("/history.js", (c) => c.body(historyClient, 200, {
+  "Content-Type": "text/javascript; charset=utf-8",
+  "Cache-Control": "no-cache",
+}));
+app.get("/history", (c) => c.html(historyPage));
 app.get("/", (c) => c.html(dashboardPage));
 
 if (config.enableChartPrefetch) {
