@@ -8,7 +8,7 @@ export const historyPage = `<!doctype html>
     <title>Chart History — Melon Charts</title>
     <link rel="preconnect" href="https://cdnimg.melon.co.kr" crossorigin />
     <link rel="stylesheet" href="/app.css?v=5" />
-    <link rel="stylesheet" href="/history.css?v=3" />
+    <link rel="stylesheet" href="/history.css?v=4" />
     <link rel="stylesheet" href="/live-filter.css?v=1" />
   </head>
   <body>
@@ -54,6 +54,7 @@ export const historyPage = `<!doctype html>
 
           <section class="history-filters" aria-label="Filter saved chart history">
             <label class="history-search" for="history-search"><span aria-hidden="true">⌕</span><input id="history-search" type="search" maxlength="80" placeholder="Filter by artist or track…" autocomplete="off" /><span class="search-hint">FILTER</span></label>
+            <label class="history-filter-field history-song-field" for="playlist-song-select"><span>PLAYLIST SONG</span><select id="playlist-song-select"><option value="">Select a playlist song…</option></select></label>
             <label class="history-filter-field" for="chart-filter"><span>CHART</span><select id="chart-filter"><option value="all">All charts</option><option value="top100">Top 100</option><option value="hot100_30">Hot 100 · 30d</option><option value="hot100_100">Hot 100 · 100d</option><option value="day">Daily</option><option value="week">Weekly</option><option value="month">Monthly</option></select></label>
             <label class="history-filter-field" for="date-from"><span>FROM</span><input id="date-from" type="date" /></label>
             <label class="history-filter-field" for="date-to"><span>TO</span><input id="date-to" type="date" /></label>
@@ -107,6 +108,6 @@ export const historyPage = `<!doctype html>
         </div>
       </main>
     </div>
-    <script type="module" src="/history.js?v=2"></script>
+    <script type="module" src="/history.js?v=3"></script>
   </body>
 </html>`;

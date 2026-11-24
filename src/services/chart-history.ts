@@ -83,6 +83,29 @@ function matchesSearch(
     .includes(search);
 }
 
+async function readLatestPlaylistTracks() {
+  const [snapshot] = await db
+    .select({ payload: liveFilterSnapshots.payload })
+    .from(liveFilterSnapshots)
+    .where(eq(liveFilterSnapshots.playlistId, playlistId))
+    .orderBy(desc(liveFilterSnapshots.capturedAt), desc(liveFilterSnapshots.id))
+    .limit(1);
+  const seen = new Set<string>();
+  const tracks: Array<{ songId: string; title: string; artists: string[] }> = [];
+
+  for (const track of snapshot?.payload?.tracks ?? []) {
+    if (!track.songId || seen.has(track.songId)) continue;
+    seen.add(track.songId);
+    tracks.push({
+      songId: track.songId,
+      title: track.title || "Untitled track",
+      artists: Array.isArray(track.artists) ? track.artists.filter(Boolean) : [],
+    });
+  }
+
+  return tracks;
+}
+
 async function readRange(from: Date, toExclusive: Date): Promise<Snapshot[]> {
   const snapshots: Snapshot[] = [];
   let cursor: { capturedAt: Date; id: number } | undefined;
@@ -185,9 +208,12 @@ async function readPriorRanks(
 }
 
 export async function getChartHistory(options: ChartHistoryOptions) {
-  const rangeSnapshots = options.snapshotMode && options.snapshotAt
-    ? await readRange(new Date("2000-01-01T00:00:00.000Z"), new Date("2100-01-01T00:00:00.000Z"))
-    : await readRange(options.from, options.toExclusive);
+  const [rangeSnapshots, playlistTracks] = await Promise.all([
+    options.snapshotMode && options.snapshotAt
+      ? readRange(new Date("2000-01-01T00:00:00.000Z"), new Date("2100-01-01T00:00:00.000Z"))
+      : readRange(options.from, options.toExclusive),
+    readLatestPlaylistTracks(),
+  ]);
   const selectedSnapshot = options.snapshotMode && options.snapshotAt
     ? findNearestChartSnapshot(rangeSnapshots, options.snapshotAt, selectedCharts(options.chart))
     : undefined;
@@ -304,6 +330,7 @@ export async function getChartHistory(options: ChartHistoryOptions) {
     oldest,
     newest,
     market: { code: "KR", label: "South Korea · Melon" },
+    playlistTracks,
     trackSeries,
     snapshot: selectedSnapshot
       ? {
