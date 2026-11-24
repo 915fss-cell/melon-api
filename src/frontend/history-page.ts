@@ -69,7 +69,7 @@ export const historyPage = `<!doctype html>
 
           <section id="snapshot-charting" class="charting-board history-snapshot-board" aria-labelledby="snapshot-charting-title" hidden>
             <div class="charting-heading">
-              <div><div class="section-overline">SAVED SNAPSHOT</div><h2 id="snapshot-charting-title">Songs on the charts</h2><p id="snapshot-charting-time">Chart positions saved at the selected date and time.</p></div>
+              <div><div class="section-overline">SAVED SNAPSHOT</div><h2 id="snapshot-charting-title">Songs on the charts</h2><p id="snapshot-charting-time">Chart positions from the nearest saved snapshot within one hour of your selection.</p></div>
               <div class="charting-view-toggle" role="group" aria-label="Organize snapshot songs">
                 <button type="button" class="charting-view-button is-active" data-history-view="song" aria-pressed="true">♫ <span>Song</span></button>
                 <button type="button" class="charting-view-button" data-history-view="chart" aria-pressed="false">▦ <span>Chart</span></button>

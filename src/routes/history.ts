@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { apiError } from "../utils/api-error.js";
 import { getChartHistory, HISTORY_CHARTS } from "../services/chart-history.js";
 import type { ChartHistoryOptions } from "../services/chart-history.js";
+import { SNAPSHOT_MATCH_WINDOW_MS } from "../services/snapshot-selection.js";
 
 const history = new Hono();
 const chartKeys = new Set(HISTORY_CHARTS.map((chart) => chart.key));
@@ -39,9 +40,8 @@ history.get("/", async (c) => {
     return apiError(c, 400, "INVALID_SNAPSHOT_TIME", "Snapshot time must be a valid ISO date-time.");
   }
   if (selectedAt) {
-    from = new Date(selectedAt);
-    from.setUTCSeconds(0, 0);
-    to = new Date(from);
+    from = new Date(selectedAt.getTime() - SNAPSHOT_MATCH_WINDOW_MS);
+    to = new Date(selectedAt.getTime() + SNAPSHOT_MATCH_WINDOW_MS);
   }
   if (!from || !to) {
     return apiError(c, 400, "INVALID_DATE_RANGE", "Dates must use the YYYY-MM-DD format.");
@@ -84,7 +84,7 @@ history.get("/", async (c) => {
   }
 
   const toExclusive = new Date(to);
-  if (selectedAt) toExclusive.setUTCMinutes(toExclusive.getUTCMinutes() + 1);
+  if (selectedAt) toExclusive.setTime(toExclusive.getTime() + 1);
   else toExclusive.setUTCDate(toExclusive.getUTCDate() + 1);
   const data = await getChartHistory({
     from,
@@ -96,6 +96,7 @@ history.get("/", async (c) => {
     page,
     pageSize,
     snapshotMode: Boolean(selectedAt),
+    snapshotAt: selectedAt ?? undefined,
   });
   return c.json(data, 200, { "Cache-Control": "no-store" });
 });
