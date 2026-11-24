@@ -17,12 +17,15 @@ export interface PlaylistTrack {
 
 export interface LiveChartPosition {
   rank: string;
+  movement: MelonTrack["rankChange"];
   rankChange: MelonTrack["rankChange"];
+  peakRank: number | null;
   officialTime: string | null;
 }
 
 export interface LiveFilterTrack extends PlaylistTrack {
   positions: Record<LiveChartKey, LiveChartPosition | null>;
+  peakRanks: Record<LiveChartKey, number | null>;
 }
 
 export interface LiveFilterData {
@@ -119,6 +122,14 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
       week: null,
       month: null,
     },
+    peakRanks: {
+      top100: null,
+      hot100_30: null,
+      hot100_100: null,
+      day: null,
+      week: null,
+      month: null,
+    },
   }));
   const tracksById = new Map(tracks.map((track) => [track.songId, track]));
   const unavailableCharts: string[] = [];
@@ -142,7 +153,9 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
       if (!playlistTrack) continue;
       playlistTrack.positions[source.key] = {
         rank: chartTrack.rank,
+        movement: chartTrack.rankChange,
         rankChange: chartTrack.rankChange,
+        peakRank: null,
         officialTime: result.value.officialTime,
       };
       if (!playlistTrack.imageUrl && chartTrack.imageUrl) {
