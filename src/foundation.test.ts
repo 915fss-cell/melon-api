@@ -160,8 +160,11 @@ describe("API foundation", () => {
     const pageText = await page.text();
     expect(pageText).toContain("Chart History — Melon Charts");
     expect(pageText).toContain('id="snapshot-at"');
+    expect(pageText).toContain("CHART DATE &amp; TIME · KST");
     expect(pageText).toContain('id="snapshot-charting"');
-    expect((await script.text())).toContain("/api/playlist/history");
+    const scriptText = await script.text();
+    expect(scriptText).toContain("/api/playlist/history");
+    expect(scriptText).toContain("Asia/Seoul");
     expect(styles.headers.get("content-type")).toContain("text/css");
   });
 
