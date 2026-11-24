@@ -20,6 +20,7 @@ export const liveFilterPage = `<!doctype html>
           </a>
           <nav class="top-navigation" aria-label="Main navigation">
             <a class="top-nav-item" href="/">Chart Explorer</a>
+            <a class="top-nav-item" href="/history">History</a>
             <a class="top-nav-item" href="/live-filter" aria-current="page">Live Filter</a>
           </nav>
           <a class="api-status" href="/health" target="_blank" rel="noreferrer"><span class="live-dot" aria-hidden="true"></span><span>API online</span></a>
