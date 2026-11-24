@@ -7,18 +7,21 @@
     "dev": "bun run --watch src/index.ts",
     "test": "bun test",
     "smoke:live": "bun run scripts/melon-live-smoke.ts",
-    "build": "bun build src/index.ts --minify --outdir=build",
+    "build": "bun build src/index.ts --minify --outdir=build --target=bun",
     "build:worker": "bun build src/index.ts --minify --outdir=build --target=bun",
     "start": "bun run build/index.js"
   },
   "dependencies": {
     "cheerio": "^1.0.0",
+    "drizzle-orm": "^0.45.4",
     "hono": "^4.7.5",
     "nanoid": "^5.1.5",
-    "neverthrow": "^8.2.0"
+    "neverthrow": "^8.2.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/node": "^20.17.24",
+    "@types/pg": "^8.23.1",
     "bun-types": "latest",
     "typescript": "^5.8.2"
   },
