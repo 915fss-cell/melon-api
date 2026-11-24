@@ -88,7 +88,9 @@ async function fetchPlaylistTracks(): Promise<Result<PlaylistTrack[], Error>> {
         const albumLink = $(row).find("td").eq(4).find("a").first();
         const album = albumLink.text().replace(/\s+/g, " ").trim();
         const albumId = albumLink.attr("href")?.match(/goAlbumDetail\(['\"]?(\d+)/)?.[1] || null;
-        const imageUrl = $(row).find('img[src*="album"]').first().attr("src") || "";
+        const image = $(row).find("img").first();
+        const imageUrl =
+          image.attr("src") || image.attr("data-original") || image.attr("data-src") || "";
 
         seen.add(songId);
         tracks.push({ songId, title, artists, album, albumId, imageUrl });
@@ -141,6 +143,9 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
         rank: chartTrack.rank,
         rankChange: chartTrack.rankChange,
       };
+      if (!playlistTrack.imageUrl && chartTrack.imageUrl) {
+        playlistTrack.imageUrl = chartTrack.imageUrl;
+      }
     }
   }
 
