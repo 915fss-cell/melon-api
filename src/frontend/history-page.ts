@@ -8,7 +8,8 @@ export const historyPage = `<!doctype html>
     <title>Chart History — Melon Charts</title>
     <link rel="preconnect" href="https://cdnimg.melon.co.kr" crossorigin />
     <link rel="stylesheet" href="/app.css?v=5" />
-    <link rel="stylesheet" href="/history.css?v=2" />
+    <link rel="stylesheet" href="/history.css?v=3" />
+    <link rel="stylesheet" href="/live-filter.css?v=1" />
   </head>
   <body>
     <div class="app-shell">
@@ -66,13 +67,24 @@ export const historyPage = `<!doctype html>
             <div id="track-chart" class="track-chart"></div>
           </section>
 
-          <section class="history-summary" aria-label="History summary">
+          <section id="snapshot-charting" class="charting-board history-snapshot-board" aria-labelledby="snapshot-charting-title" hidden>
+            <div class="charting-heading">
+              <div><div class="section-overline">SAVED SNAPSHOT</div><h2 id="snapshot-charting-title">Songs on the charts</h2><p id="snapshot-charting-time">Chart positions saved at the selected date and time.</p></div>
+              <div class="charting-view-toggle" role="group" aria-label="Organize snapshot songs">
+                <button type="button" class="charting-view-button is-active" data-history-view="song" aria-pressed="true">♫ <span>Song</span></button>
+                <button type="button" class="charting-view-button" data-history-view="chart" aria-pressed="false">▦ <span>Chart</span></button>
+              </div>
+            </div>
+            <div id="snapshot-charting-content" class="charting-content" aria-live="polite"></div>
+          </section>
+
+          <section class="history-summary" id="history-summary" aria-label="History summary">
             <article class="history-stat"><span class="stat-label">SAVED OBSERVATIONS</span><strong id="history-total">—</strong><span class="stat-foot">matching the current filters</span></article>
             <article class="history-stat"><span class="stat-label">TRACKS FOUND</span><strong id="history-tracks">—</strong><span class="stat-foot">with chart positions in range</span></article>
             <article class="history-stat"><span class="stat-label">SNAPSHOT WINDOW</span><strong id="history-window">—</strong><span class="stat-foot">first to latest match</span></article>
           </section>
 
-          <section class="history-board" aria-labelledby="history-heading">
+          <section class="history-board" id="history-board" aria-labelledby="history-heading">
             <div class="history-board-heading">
               <div><div class="section-overline">DATABASE SNAPSHOTS</div><h2 id="history-heading">Chart positions over time</h2><p>Change compares each saved position with the most recent earlier saved position for that same track and chart.</p></div>
               <label class="history-page-size" for="page-size"><span>ROWS</span><select id="page-size"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label>
