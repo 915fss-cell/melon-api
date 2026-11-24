@@ -22,13 +22,15 @@ const state={
   page:Math.max(1,Number.parseInt(params.get('page')||'1',10)||1),
   pageSize:[25,50,100].includes(Number(params.get('pageSize')))?Number(params.get('pageSize')):25,
   track:params.get('track')||'',
+  at:params.get('at')||'',
   timer:null,
   requestId:0,
   data:null,
 };
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,(char)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
-function syncUrl(){const url=new URL(location.href);['from','to','chart','q','sort','page','pageSize','track'].forEach((key)=>url.searchParams.delete(key));if(state.from)url.searchParams.set('from',state.from);if(state.to)url.searchParams.set('to',state.to);if(state.chart!=='all')url.searchParams.set('chart',state.chart);if(state.query)url.searchParams.set('q',state.query);if(state.sort!=='date_desc')url.searchParams.set('sort',state.sort);if(state.page>1)url.searchParams.set('page',String(state.page));if(state.pageSize!==25)url.searchParams.set('pageSize',String(state.pageSize));if(state.track)url.searchParams.set('track',state.track);history.replaceState({},'',url.pathname+url.search);}
-function requestUrl(){const query=new URLSearchParams({from:state.from,to:state.to,chart:state.chart,market:'KR',q:state.query,sort:state.sort,page:String(state.page),pageSize:String(state.pageSize)});if(state.track)query.set('track',state.track);return '/api/playlist/history?'+query.toString();}
+function localDateTimeValue(date){const pad=(part)=>String(part).padStart(2,'0');return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate())+'T'+pad(date.getHours())+':'+pad(date.getMinutes())}
+function syncUrl(){const url=new URL(location.href);['from','to','chart','q','sort','page','pageSize','track','at'].forEach((key)=>url.searchParams.delete(key));if(state.from)url.searchParams.set('from',state.from);if(state.to)url.searchParams.set('to',state.to);if(state.at)url.searchParams.set('at',new Date(state.at).toISOString());if(state.chart!=='all')url.searchParams.set('chart',state.chart);if(state.query)url.searchParams.set('q',state.query);if(state.sort!=='date_desc')url.searchParams.set('sort',state.sort);if(state.page>1)url.searchParams.set('page',String(state.page));if(state.pageSize!==25)url.searchParams.set('pageSize',String(state.pageSize));if(state.track)url.searchParams.set('track',state.track);history.replaceState({},'',url.pathname+url.search);}
+function requestUrl(){const query=new URLSearchParams({from:state.from,to:state.to,chart:state.chart,market:'KR',q:state.query,sort:state.sort,page:String(state.page),pageSize:String(state.pageSize)});if(state.at)query.set('at',new Date(state.at).toISOString());if(state.track)query.set('track',state.track);return '/api/playlist/history?'+query.toString();}
 function formatDate(value,options){if(!value)return '—';const date=new Date(value);if(Number.isNaN(date.getTime()))return '—';return new Intl.DateTimeFormat(undefined,options||{month:'short',day:'2-digit',year:'numeric'}).format(date)}
 function setStatus(message,tone){const status=$('#history-state');status.textContent=message;status.dataset.tone=tone||'';status.hidden=!message;}
 function encodeTrendUrl(row){const url=new URL('/history',location.origin);url.searchParams.set('from',state.from);url.searchParams.set('to',state.to);url.searchParams.set('chart',row.chartKey);url.searchParams.set('track',row.songId);url.searchParams.set('sort','date_asc');url.searchParams.set('pageSize','100');return url.pathname+url.search;}
@@ -108,8 +110,13 @@ function updateFilters(){
   if(!state.from||!state.to||state.from>state.to){$('#date-from').setAttribute('aria-invalid',String(!state.from||state.from>state.to));$('#date-to').setAttribute('aria-invalid',String(!state.to||state.from>state.to));setStatus('Choose a valid date range. The start date must be on or before the end date.','error');return;}
   $('#date-from').removeAttribute('aria-invalid');$('#date-to').removeAttribute('aria-invalid');loadData();
 }
-$('#date-from').value=state.from;$('#date-to').value=state.to;$('#chart-filter').value=state.chart;$('#history-search').value=state.query;$('#history-sort').value=state.sort;$('#page-size').value=String(state.pageSize);
-$('#date-from').addEventListener('change',updateFilters);$('#date-to').addEventListener('change',updateFilters);$('#chart-filter').addEventListener('change',updateFilters);$('#history-sort').addEventListener('change',updateFilters);$('#page-size').addEventListener('change',updateFilters);
+$('#date-from').value=state.from;$('#date-to').value=state.to;$('#snapshot-at').value=state.at?localDateTimeValue(new Date(state.at)):'';$('#chart-filter').value=state.chart;$('#history-search').value=state.query;$('#history-sort').value=state.sort;$('#page-size').value=String(state.pageSize);
+function setSnapshotTime(value){state.at=value;state.track='';state.page=1;loadData();}
+$('#snapshot-at').addEventListener('change',(event)=>setSnapshotTime(event.currentTarget.value));
+function shiftSnapshot(amount){const input=$('#snapshot-at');const base=input.value?new Date(input.value):new Date();base.setHours(base.getHours()+amount);input.value=localDateTimeValue(base);setSnapshotTime(input.value);}
+$('#snapshot-previous').addEventListener('click',()=>shiftSnapshot(-1));$('#snapshot-next').addEventListener('click',()=>shiftSnapshot(1));$('#snapshot-previous-day').addEventListener('click',()=>shiftSnapshot(-24));$('#snapshot-next-day').addEventListener('click',()=>shiftSnapshot(24));
+$('#snapshot-clear').addEventListener('click',()=>{state.at='';$('#snapshot-at').value='';loadData();});
+$('#date-from').addEventListener('change',()=>{state.at='';$('#snapshot-at').value='';updateFilters();});$('#date-to').addEventListener('change',()=>{state.at='';$('#snapshot-at').value='';updateFilters();});$('#chart-filter').addEventListener('change',updateFilters);$('#history-sort').addEventListener('change',updateFilters);$('#page-size').addEventListener('change',updateFilters);
 $('#history-search').addEventListener('input',(event)=>{state.query=event.currentTarget.value.trim();state.track='';state.page=1;window.clearTimeout(state.timer);state.timer=window.setTimeout(loadData,220);});
 $('#previous-page').addEventListener('click',()=>{if(state.page>1){state.page-=1;loadData();}});$('#next-page').addEventListener('click',()=>{state.page+=1;loadData();});
 $('#close-track-detail').addEventListener('click',()=>{state.track='';state.sort='date_desc';$('#history-sort').value=state.sort;state.page=1;loadData();});
