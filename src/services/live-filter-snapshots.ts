@@ -2,7 +2,14 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { liveFilterSnapshots } from "../db/schema.js";
 import type { LiveChartKey, LiveChartPosition, LiveFilterData } from "./playlist.js";
-import { getOfficialChartTimeSignature } from "./chart-time-signature.js";
+import {
+  getChangedOfficialChartKeys,
+  getOfficialChartTimes,
+  mergeOfficialChartTimes,
+  parseOfficialChartTimeSignature,
+  retainOnlyUpdatedChartPositions,
+  serializeOfficialChartTimes,
+} from "./chart-time-signature.js";
 
 const chartKeys: LiveChartKey[] = ["top100", "hot100_30", "hot100_100", "day", "week", "month"];
 
@@ -80,15 +87,31 @@ export type LiveFilterSnapshotSaveResult = "saved" | "duplicate" | "missing-offi
 export async function saveLiveFilterSnapshot(
   data: LiveFilterData,
 ): Promise<LiveFilterSnapshotSaveResult> {
-  const officialTimeSignature = getOfficialChartTimeSignature(data);
+  const currentTimes = getOfficialChartTimes(data);
+  if (!Object.values(currentTimes).some(Boolean)) return "missing-official-time";
+
+  const [latestSnapshot] = await db
+    .select({ signature: liveFilterSnapshots.officialTimeSignature })
+    .from(liveFilterSnapshots)
+    .where(eq(liveFilterSnapshots.playlistId, data.playlistId))
+    .orderBy(desc(liveFilterSnapshots.capturedAt), desc(liveFilterSnapshots.id))
+    .limit(1);
+  const previousTimes = parseOfficialChartTimeSignature(latestSnapshot?.signature);
+  const updatedChartKeys = getChangedOfficialChartKeys(currentTimes, previousTimes);
+  if (!updatedChartKeys.length) return "duplicate";
+
+  const officialTimeSignature = serializeOfficialChartTimes(
+    mergeOfficialChartTimes(currentTimes, previousTimes),
+  );
   if (!officialTimeSignature) return "missing-official-time";
 
+  const payload = retainOnlyUpdatedChartPositions(data, updatedChartKeys);
   const inserted = await db
     .insert(liveFilterSnapshots)
     .values({
       playlistId: data.playlistId,
       officialTimeSignature,
-      payload: data,
+      payload,
     })
     .onConflictDoNothing({
       target: [liveFilterSnapshots.playlistId, liveFilterSnapshots.officialTimeSignature],

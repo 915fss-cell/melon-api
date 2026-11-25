@@ -24,7 +24,7 @@ export interface LiveChartPosition {
 }
 
 export interface LiveFilterTrack extends PlaylistTrack {
-  positions: Record<LiveChartKey, LiveChartPosition | null>;
+  positions: Partial<Record<LiveChartKey, LiveChartPosition | null>>;
   peakRanks: Record<LiveChartKey, number | null>;
 }
 
@@ -33,6 +33,7 @@ export interface LiveFilterData {
   updatedAt: string;
   tracks: LiveFilterTrack[];
   unavailableCharts: string[];
+  officialChartTimes?: Partial<Record<LiveChartKey, string | null>>;
 }
 
 const playlistId = "529294115";
@@ -140,6 +141,7 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
       result: await getMelonChartData(source.type, source.period ?? "30"),
     }))
   );
+  const officialChartTimes: Partial<Record<LiveChartKey, string | null>> = {};
 
   for (const { source, result } of chartResults) {
     if (result.isErr()) {
@@ -147,6 +149,7 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
       continue;
     }
 
+    officialChartTimes[source.key] = result.value.officialTime;
     for (const chartTrack of result.value.tracks) {
       if (!chartTrack.songId) continue;
       const playlistTrack = tracksById.get(chartTrack.songId);
@@ -169,5 +172,6 @@ export async function getLiveFilterData(): Promise<Result<LiveFilterData, Error>
     updatedAt: new Date().toISOString(),
     tracks,
     unavailableCharts,
+    officialChartTimes,
   });
 }
