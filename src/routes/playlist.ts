@@ -12,12 +12,11 @@ playlist.get("/live-filter", async (c) => {
   }
 
   let data = result.value;
-  let snapshotSaved = true;
+  let snapshotStatus: "saved" | "duplicate" | "missing-official-time" | "error" = "error";
   try {
     data = await addHistoricalPeakRanks(data);
-    await saveLiveFilterSnapshot(data);
+    snapshotStatus = await saveLiveFilterSnapshot(data);
   } catch (error) {
-    snapshotSaved = false;
     console.error(
       "Failed to enrich or save Live Filter chart snapshot:",
       error instanceof Error ? error.message : "Unknown database error",
@@ -25,7 +24,7 @@ playlist.get("/live-filter", async (c) => {
   }
 
   return c.json(
-    { ...data, snapshotSaved },
+    { ...data, snapshotSaved: snapshotStatus === "saved", snapshotStatus },
     200,
     { "Cache-Control": "no-store" },
   );
