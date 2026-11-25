@@ -50,6 +50,25 @@ describe("official chart time signatures", () => {
     expect(getOfficialChartTimeSignature(dataWithTimes({}))).toBeNull();
   });
 
+  test("uses source chart times even when no playlist tracks match", () => {
+    const data = {
+      tracks: [],
+      officialChartTimes: {
+        top100: "2026.11.25 22:00",
+        day: "2026.11.24",
+      },
+    };
+
+    expect(getOfficialChartTimes(data)).toEqual({
+      top100: "2026.11.25 22:00",
+      hot100_30: null,
+      hot100_100: null,
+      day: "2026.11.24",
+      week: null,
+      month: null,
+    });
+  });
+
   test("changes when an official chart time advances", () => {
     const first = getOfficialChartTimeSignature(dataWithTimes({ top100: "2026.11.25 14:00" }));
     const next = getOfficialChartTimeSignature(dataWithTimes({ top100: "2026.11.25 15:00" }));

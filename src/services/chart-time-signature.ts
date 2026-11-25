@@ -10,16 +10,16 @@ export const OFFICIAL_CHART_KEYS: readonly LiveChartKey[] = [
 ];
 
 export type OfficialChartTimes = Record<LiveChartKey, string | null>;
-type TracksOnly = Pick<LiveFilterData, "tracks">;
+type TracksOnly = Pick<LiveFilterData, "tracks" | "officialChartTimes">;
 
 export function getOfficialChartTimes(data: TracksOnly): OfficialChartTimes {
   return Object.fromEntries(
     OFFICIAL_CHART_KEYS.map((chartKey) => {
-      const officialTime = data.tracks
+      const officialTime = data.officialChartTimes?.[chartKey] ?? data.tracks
         .map((track) => track.positions?.[chartKey]?.officialTime)
         .find((value): value is string => typeof value === "string" && value.trim().length > 0);
 
-      return [chartKey, officialTime?.trim() ?? null];
+      return [chartKey, officialTime?.trim() || null];
     }),
   ) as OfficialChartTimes;
 }
