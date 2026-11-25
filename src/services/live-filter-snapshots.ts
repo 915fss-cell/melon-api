@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { liveFilterSnapshots } from "../db/schema.js";
 import type { LiveChartKey, LiveChartPosition, LiveFilterData } from "./playlist.js";
+import { getOfficialChartTimeSignature } from "./chart-time-signature.js";
 
 const chartKeys: LiveChartKey[] = ["top100", "hot100_30", "hot100_100", "day", "week", "month"];
 
@@ -75,25 +75,25 @@ export async function addHistoricalPeakRanks(data: LiveFilterData): Promise<Live
   };
 }
 
-export async function saveLiveFilterSnapshot(data: LiveFilterData): Promise<void> {
-  const fingerprint = createHash("sha256")
-    .update(
-      JSON.stringify({
-        playlistId: data.playlistId,
-        tracks: data.tracks,
-        unavailableCharts: data.unavailableCharts,
-      }),
-    )
-    .digest("hex");
+export type LiveFilterSnapshotSaveResult = "saved" | "duplicate" | "missing-official-time";
 
-  await db
+export async function saveLiveFilterSnapshot(
+  data: LiveFilterData,
+): Promise<LiveFilterSnapshotSaveResult> {
+  const officialTimeSignature = getOfficialChartTimeSignature(data);
+  if (!officialTimeSignature) return "missing-official-time";
+
+  const inserted = await db
     .insert(liveFilterSnapshots)
     .values({
       playlistId: data.playlistId,
-      snapshotHash: fingerprint,
+      officialTimeSignature,
       payload: data,
     })
     .onConflictDoNothing({
-      target: [liveFilterSnapshots.playlistId, liveFilterSnapshots.snapshotHash],
-    });
+      target: [liveFilterSnapshots.playlistId, liveFilterSnapshots.officialTimeSignature],
+    })
+    .returning({ id: liveFilterSnapshots.id });
+
+  return inserted.length > 0 ? "saved" : "duplicate";
 }
