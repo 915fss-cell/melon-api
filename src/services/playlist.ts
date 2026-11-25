@@ -24,7 +24,7 @@ export interface LiveChartPosition {
 }
 
 export interface LiveFilterTrack extends PlaylistTrack {
-  positions: Record<LiveChartKey, LiveChartPosition | null>;
+  positions: Partial<Record<LiveChartKey, LiveChartPosition | null>>;
   peakRanks: Record<LiveChartKey, number | null>;
 }
 

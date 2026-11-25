@@ -195,7 +195,9 @@ async function readPriorRanks(
             priorRanks.has(key) ||
             snapshot.payload.unavailableCharts?.includes(chartLabel)
           ) continue;
-          priorRanks.set(key, rankValue(track.positions?.[chartKey]?.rank));
+          const position = track.positions?.[chartKey];
+          if (position === undefined) continue;
+          priorRanks.set(key, rankValue(position?.rank));
         }
       }
     }
@@ -247,6 +249,7 @@ export async function getChartHistory(options: ChartHistoryOptions) {
         const chartLabel = HISTORY_CHARTS.find((item) => item.key === chartKey)!.label;
         if (snapshot.payload.unavailableCharts?.includes(chartLabel)) continue;
         const position = track.positions?.[chartKey];
+        if (position === undefined) continue;
         const rank = rankValue(position?.rank);
         const key = pairKey(track.songId, chartKey);
         if (rank === null) {
